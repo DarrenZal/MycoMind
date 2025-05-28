@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "profile": "default",
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4",
+    "api_key_env": "OPENAI_API_KEY",
+    "temperature": 0.1,
+    "max_tokens": 4000,
+    "timeout": 60,
+    "retry_attempts": 3,
+    "retry_delay": 1.0
+  },
+  "obsidian": {
+    "vault_path": "/path/to/your/obsidian/vault",
+    "notes_folder": "extracted_knowledge",
+    "create_folders": true,
+    "folder_structure": "by_type",
+    "filename_template": "{name}",
+    "overwrite_existing": false,
+    "backup_existing": true,
+    "filename_sanitization": {
+      "replace_spaces": "_",
+      "remove_special_chars": false,
+      "max_length": 100,
+      "case": "lower"
+    }
+  },
+  "processing": {
+    "batch_size": 5,
+    "max_concurrent": 3,
+    "chunk_size": 4000,
+    "chunk_overlap": 200,
+    "enable_caching": true,
+    "cache_directory": ".cache/mycomind",
+    "cache_ttl": 3600,
+    "quality_threshold": 0.7
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/mycomind.log",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "max_size": "10MB",
+    "backup_count": 5
+  },
+  "data_sources": {
+    "default_encoding": "utf-8",
+    "supported_formats": ["txt", "md", "pdf", "docx", "html"],
+    "web_scraping": {
+      "user_agent": "MycoMind/1.0",
+      "timeout": 30,
+      "max_redirects": 5,
+      "respect_robots_txt": true,
+      "rate_limit": 1.0,
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      }
+    }
+  }
+}

@@ -1,0 +1,341 @@
+{
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "myco": "https://mycomind.org/schema/"
+  },
+  "@type": "Schema",
+  "name": "Personal Knowledge Schema",
+  "description": "Schema for extracting personal and professional knowledge from documents, articles, and conversations",
+  "version": "1.0.0",
+  "entities": {
+    "Person": {
+      "@type": "Class",
+      "description": "An individual person mentioned in the content",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Full name of the person"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address if mentioned"
+        },
+        "role": {
+          "type": "string",
+          "description": "Professional role or title"
+        },
+        "organization": {
+          "type": "string",
+          "description": "Organization or company they work for"
+        },
+        "expertise": {
+          "type": "array",
+          "items": "string",
+          "description": "Areas of expertise or specialization"
+        },
+        "location": {
+          "type": "string",
+          "description": "Geographic location if mentioned"
+        }
+      },
+      "relationships": {
+        "knows": {
+          "target": "Person",
+          "description": "Personal or professional acquaintance",
+          "bidirectional": true
+        },
+        "worksFor": {
+          "target": "Organization",
+          "description": "Current employment relationship"
+        },
+        "collaboratesWith": {
+          "target": "Person",
+          "description": "Professional collaboration"
+        },
+        "mentors": {
+          "target": "Person",
+          "description": "Mentoring relationship"
+        }
+      }
+    },
+    "Organization": {
+      "@type": "Class",
+      "description": "A company, institution, university, or formal group",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Organization name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["company", "university", "nonprofit", "government", "startup"],
+          "description": "Type of organization"
+        },
+        "industry": {
+          "type": "string",
+          "description": "Primary industry or sector"
+        },
+        "location": {
+          "type": "string",
+          "description": "Primary location or headquarters"
+        },
+        "size": {
+          "type": "string",
+          "enum": ["startup", "small", "medium", "large", "enterprise"],
+          "description": "Organization size"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "Organization website"
+        }
+      },
+      "relationships": {
+        "employs": {
+          "target": "Person",
+          "description": "Employment relationship"
+        },
+        "partnersWith": {
+          "target": "Organization",
+          "description": "Business partnership"
+        },
+        "competesWith": {
+          "target": "Organization",
+          "description": "Competitive relationship"
+        },
+        "acquiredBy": {
+          "target": "Organization",
+          "description": "Acquisition relationship"
+        }
+      }
+    },
+    "Concept": {
+      "@type": "Class",
+      "description": "A key concept, idea, theory, or methodology",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Concept name or title"
+        },
+        "definition": {
+          "type": "string",
+          "description": "Definition or explanation of the concept"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain or field of study (e.g., 'machine learning', 'psychology')"
+        },
+        "complexity": {
+          "type": "string",
+          "enum": ["basic", "intermediate", "advanced", "expert"],
+          "description": "Complexity level of the concept"
+        },
+        "keywords": {
+          "type": "array",
+          "items": "string",
+          "description": "Related keywords or synonyms"
+        }
+      },
+      "relationships": {
+        "relatedTo": {
+          "target": "Concept",
+          "description": "Related or similar concept"
+        },
+        "prerequisiteFor": {
+          "target": "Concept",
+          "description": "This concept is a prerequisite for another"
+        },
+        "partOf": {
+          "target": "Concept",
+          "description": "This concept is part of a larger concept"
+        },
+        "exemplifiedBy": {
+          "target": "Project",
+          "description": "Project that demonstrates this concept"
+        },
+        "researchedBy": {
+          "target": "Person",
+          "description": "Person who researches this concept"
+        }
+      }
+    },
+    "Project": {
+      "@type": "Class",
+      "description": "A specific project, initiative, or piece of work",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Project name or title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Project description or summary"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["planning", "active", "completed", "paused", "cancelled"],
+          "description": "Current project status"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Project start date"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Project end date (if completed)"
+        },
+        "budget": {
+          "type": "string",
+          "description": "Project budget if mentioned"
+        },
+        "technology": {
+          "type": "array",
+          "items": "string",
+          "description": "Technologies or tools used"
+        }
+      },
+      "relationships": {
+        "ledBy": {
+          "target": "Person",
+          "description": "Project leader or manager"
+        },
+        "involvedPerson": {
+          "target": "Person",
+          "description": "Person involved in the project"
+        },
+        "fundedBy": {
+          "target": "Organization",
+          "description": "Funding organization"
+        },
+        "usesConcept": {
+          "target": "Concept",
+          "description": "Concept or methodology used in the project"
+        },
+        "buildsOn": {
+          "target": "Project",
+          "description": "Previous project this builds upon"
+        }
+      }
+    },
+    "Resource": {
+      "@type": "Class",
+      "description": "A book, article, paper, video, or other learning resource",
+      "properties": {
+        "title": {
+          "type": "string",
+          "required": true,
+          "description": "Resource title"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["book", "article", "paper", "video", "podcast", "course", "website"],
+          "description": "Type of resource"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL or link to the resource"
+        },
+        "publicationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Publication or release date"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Brief summary of the resource"
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["beginner", "intermediate", "advanced"],
+          "description": "Difficulty level"
+        }
+      },
+      "relationships": {
+        "authoredBy": {
+          "target": "Person",
+          "description": "Author or creator of the resource"
+        },
+        "publishedBy": {
+          "target": "Organization",
+          "description": "Publisher or platform"
+        },
+        "covers": {
+          "target": "Concept",
+          "description": "Concept or topic covered by the resource"
+        },
+        "recommendedBy": {
+          "target": "Person",
+          "description": "Person who recommended this resource"
+        },
+        "prerequisite": {
+          "target": "Resource",
+          "description": "Resource that should be consumed first"
+        }
+      }
+    },
+    "Event": {
+      "@type": "Class",
+      "description": "A conference, meeting, workshop, or other significant event",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Event name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["conference", "workshop", "meeting", "webinar", "course"],
+          "description": "Type of event"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Event date"
+        },
+        "location": {
+          "type": "string",
+          "description": "Event location (physical or virtual)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Event description or agenda"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "Event website"
+        }
+      },
+      "relationships": {
+        "organizedBy": {
+          "target": "Organization",
+          "description": "Organizing entity"
+        },
+        "attendedBy": {
+          "target": "Person",
+          "description": "Person who attended the event"
+        },
+        "presentedBy": {
+          "target": "Person",
+          "description": "Person who presented at the event"
+        },
+        "covers": {
+          "target": "Concept",
+          "description": "Topic or concept covered at the event"
+        },
+        "relatedTo": {
+          "target": "Project",
+          "description": "Project discussed or presented at the event"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+# AI Research Meeting Notes - January 15, 2024
+
+## Attendees
+- Dr. Sarah Chen, Lead AI Researcher at Stanford University
+- Prof. Michael Rodriguez, Machine Learning Professor at MIT
+- Dr. Emily Watson, Senior Data Scientist at Google DeepMind
+- Alex Thompson, PhD Student at Carnegie Mellon University
+
+## Meeting Overview
+This meeting focused on discussing recent advances in large language models and their applications in knowledge extraction. The team reviewed several key papers and discussed potential collaboration opportunities.
+
+## Key Topics Discussed
+
+### Large Language Models for Knowledge Extraction
+Dr. Chen presented her recent work on using GPT-4 for structured information extraction from scientific papers. Her research shows that with proper prompt engineering, LLMs can achieve 85% accuracy in extracting entities and relationships from academic literature.
+
+The team discussed the challenges of maintaining consistency in entity naming across different documents. Prof. Rodriguez suggested implementing a two-step approach: first extract entities, then resolve them against an existing knowledge base.
+
+### Ontology-Driven Approaches
+Prof. Rodriguez shared insights from his collaboration with the Knowledge Graph Research Lab at MIT. They've been working on JSON-LD schemas that define domain-specific ontologies for biomedical research. Their approach uses formal schema definitions to guide the extraction process, resulting in more structured and consistent outputs.
+
+Emily Watson mentioned that Google DeepMind has been experimenting with similar approaches for their internal knowledge management systems. She noted that the key challenge is balancing flexibility with structure - schemas need to be specific enough to ensure quality but flexible enough to handle diverse content.
+
+### Semantic Linking and WikiLinks
+The discussion turned to methods for creating meaningful connections between extracted entities. Alex Thompson presented his thesis work on semantic linking using WikiLink formatting. His approach automatically formats entity references as [[Entity Name]] to enable easy navigation in tools like Obsidian.
+
+Dr. Chen expressed interest in this approach for her Personal Knowledge Management system. She's been looking for ways to better organize and connect her research notes, and the WikiLink approach seems promising for creating a navigable knowledge graph.
+
+### Technical Implementation
+The team discussed various technical approaches:
+
+1. **Schema Design**: Using JSON-LD for defining entity types and relationships
+2. **LLM Integration**: Leveraging OpenAI's API for entity extraction
+3. **Output Formats**: Generating Markdown files with YAML frontmatter for Obsidian compatibility
+4. **Quality Control**: Implementing confidence scoring and validation mechanisms
+
+### Future Collaboration
+Several collaboration opportunities were identified:
+
+- **Joint Research Project**: Combining Stanford's extraction techniques with MIT's ontology work
+- **Open Source Tool**: Developing a public tool for ontology-driven knowledge extraction
+- **Academic Paper**: Co-authoring a paper on LLM-based knowledge extraction methodologies
+- **Workshop Organization**: Organizing a workshop on "AI-Powered Knowledge Management" at the next AAAI conference
+
+## Action Items
+
+1. Dr. Chen will share her prompt engineering templates with the team
+2. Prof. Rodriguez will provide access to the MIT Knowledge Graph Research Lab's schema repository
+3. Emily Watson will investigate Google DeepMind's internal policies for open source collaboration
+4. Alex Thompson will prepare a demo of his WikiLink-based semantic linking system
+5. All attendees will reconvene in two weeks to review progress and plan next steps
+
+## Technical Notes
+
+### Mentioned Tools and Technologies
+- **OpenAI GPT-4**: For natural language processing and entity extraction
+- **JSON-LD**: For schema definition and semantic web compatibility
+- **Obsidian**: As a target platform for knowledge management
+- **Neo4j**: For graph database storage and querying
+- **Python**: Primary programming language for implementation
+
+### Research Papers Referenced
+- "Large Language Models for Information Extraction" by Chen et al. (2023)
+- "Ontology-Driven Knowledge Graphs in Biomedical Research" by Rodriguez & Kim (2023)
+- "Semantic Linking in Personal Knowledge Management" by Thompson (2024, in preparation)
+
+### Organizations Mentioned
+- Stanford University AI Lab
+- MIT Knowledge Graph Research Lab
+- Google DeepMind
+- Carnegie Mellon University School of Computer Science
+- AAAI (Association for the Advancement of Artificial Intelligence)
+
+## Contact Information
+- Dr. Sarah Chen: s.chen@stanford.edu
+- Prof. Michael Rodriguez: mrodriguez@mit.edu
+- Dr. Emily Watson: ewatson@deepmind.com
+- Alex Thompson: athompson@cmu.edu
+
+## Next Meeting
+Scheduled for January 29, 2024, 2:00 PM PST via Zoom. Meeting ID will be shared separately.
+
+---
+
+*Meeting notes compiled by Alex Thompson. Please review and send corrections by January 18, 2024.*

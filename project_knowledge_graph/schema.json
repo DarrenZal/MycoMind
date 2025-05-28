@@ -1,0 +1,494 @@
+{
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "myco": "https://mycomind.org/schema/",
+    "kg": "https://mycomind.org/kg/"
+  },
+  "@type": "Schema",
+  "name": "MycoMind Project Knowledge Graph Schema",
+  "description": "Meta-schema for representing the MycoMind project's own structure, code, and documentation as a knowledge graph",
+  "version": "1.0.0",
+  "entities": {
+    "PythonFunction": {
+      "@type": "Class",
+      "description": "A function defined in the Python codebase",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Function name"
+        },
+        "signature": {
+          "type": "string",
+          "description": "Complete function signature with parameters and return type"
+        },
+        "docstring": {
+          "type": "string",
+          "description": "Function documentation string"
+        },
+        "complexity": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "very_high"],
+          "description": "Estimated complexity level"
+        },
+        "line_number": {
+          "type": "integer",
+          "description": "Starting line number in source file"
+        },
+        "parameters": {
+          "type": "array",
+          "items": "string",
+          "description": "List of parameter names"
+        },
+        "return_type": {
+          "type": "string",
+          "description": "Return type annotation"
+        }
+      },
+      "relationships": {
+        "definedIn": {
+          "target": "PythonModule",
+          "description": "Module where this function is defined"
+        },
+        "calls": {
+          "target": "PythonFunction",
+          "description": "Functions called by this function"
+        },
+        "calledBy": {
+          "target": "PythonFunction",
+          "description": "Functions that call this function"
+        },
+        "uses": {
+          "target": "PythonClass",
+          "description": "Classes used by this function"
+        },
+        "implements": {
+          "target": "Feature",
+          "description": "Feature implemented by this function"
+        },
+        "documentedBy": {
+          "target": "DocSection",
+          "description": "Documentation that describes this function"
+        }
+      }
+    },
+    "PythonClass": {
+      "@type": "Class",
+      "description": "A class defined in the Python codebase",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Class name"
+        },
+        "docstring": {
+          "type": "string",
+          "description": "Class documentation string"
+        },
+        "line_number": {
+          "type": "integer",
+          "description": "Starting line number in source file"
+        },
+        "is_abstract": {
+          "type": "boolean",
+          "description": "Whether this is an abstract class"
+        },
+        "methods": {
+          "type": "array",
+          "items": "string",
+          "description": "List of method names"
+        }
+      },
+      "relationships": {
+        "definedIn": {
+          "target": "PythonModule",
+          "description": "Module where this class is defined"
+        },
+        "inheritsFrom": {
+          "target": "PythonClass",
+          "description": "Parent class"
+        },
+        "hasMethod": {
+          "target": "PythonFunction",
+          "description": "Methods belonging to this class"
+        },
+        "usedBy": {
+          "target": "PythonFunction",
+          "description": "Functions that use this class"
+        },
+        "implements": {
+          "target": "Feature",
+          "description": "Feature implemented by this class"
+        }
+      }
+    },
+    "PythonModule": {
+      "@type": "Class",
+      "description": "A Python file or module in the codebase",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Module name (filename)"
+        },
+        "path": {
+          "type": "string",
+          "description": "Relative path to the module file"
+        },
+        "docstring": {
+          "type": "string",
+          "description": "Module-level documentation"
+        },
+        "line_count": {
+          "type": "integer",
+          "description": "Total lines of code"
+        },
+        "imports": {
+          "type": "array",
+          "items": "string",
+          "description": "List of imported modules"
+        }
+      },
+      "relationships": {
+        "imports": {
+          "target": "PythonModule",
+          "description": "Modules imported by this module"
+        },
+        "importedBy": {
+          "target": "PythonModule",
+          "description": "Modules that import this module"
+        },
+        "defines": {
+          "target": "PythonFunction",
+          "description": "Functions defined in this module"
+        },
+        "contains": {
+          "target": "PythonClass",
+          "description": "Classes defined in this module"
+        },
+        "implements": {
+          "target": "Component",
+          "description": "System component implemented by this module"
+        }
+      }
+    },
+    "DocSection": {
+      "@type": "Class",
+      "description": "A section within a documentation file",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Section title or heading"
+        },
+        "heading_level": {
+          "type": "integer",
+          "description": "Markdown heading level (1-6)"
+        },
+        "content": {
+          "type": "string",
+          "description": "Section content"
+        },
+        "word_count": {
+          "type": "integer",
+          "description": "Number of words in the section"
+        },
+        "section_type": {
+          "type": "string",
+          "enum": ["overview", "guide", "reference", "example", "api"],
+          "description": "Type of documentation section"
+        },
+        "topics": {
+          "type": "array",
+          "items": "string",
+          "description": "Main topics covered in this section"
+        }
+      },
+      "relationships": {
+        "containedIn": {
+          "target": "DocFile",
+          "description": "Documentation file containing this section"
+        },
+        "describes": {
+          "target": "Feature",
+          "description": "Feature described by this section"
+        },
+        "explains": {
+          "target": "Concept",
+          "description": "Concept explained in this section"
+        },
+        "references": {
+          "target": "PythonFunction",
+          "description": "Code functions referenced in this section"
+        },
+        "linksTo": {
+          "target": "DocSection",
+          "description": "Other documentation sections linked from here"
+        }
+      }
+    },
+    "DocFile": {
+      "@type": "Class",
+      "description": "A documentation file in the project",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Documentation file name"
+        },
+        "path": {
+          "type": "string",
+          "description": "Relative path to the documentation file"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["markdown", "rst", "txt"],
+          "description": "Documentation format"
+        },
+        "word_count": {
+          "type": "integer",
+          "description": "Total word count"
+        },
+        "last_modified": {
+          "type": "string",
+          "format": "date",
+          "description": "Last modification date"
+        }
+      },
+      "relationships": {
+        "contains": {
+          "target": "DocSection",
+          "description": "Sections within this documentation file"
+        },
+        "covers": {
+          "target": "Component",
+          "description": "System component covered by this documentation"
+        }
+      }
+    },
+    "Feature": {
+      "@type": "Class",
+      "description": "A functional capability of the MycoMind system",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Feature name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Feature description"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["planned", "in_development", "implemented", "deprecated"],
+          "description": "Development status"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Feature priority"
+        },
+        "complexity": {
+          "type": "string",
+          "enum": ["simple", "moderate", "complex", "very_complex"],
+          "description": "Implementation complexity"
+        }
+      },
+      "relationships": {
+        "implementedBy": {
+          "target": "PythonFunction",
+          "description": "Functions that implement this feature"
+        },
+        "dependsOn": {
+          "target": "Feature",
+          "description": "Features this feature depends on"
+        },
+        "enables": {
+          "target": "Feature",
+          "description": "Features enabled by this feature"
+        },
+        "documentedIn": {
+          "target": "DocSection",
+          "description": "Documentation sections describing this feature"
+        },
+        "partOf": {
+          "target": "Component",
+          "description": "System component this feature belongs to"
+        }
+      }
+    },
+    "Component": {
+      "@type": "Class",
+      "description": "A major system component or module",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Component name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Component description"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["core", "utility", "interface", "data", "external"],
+          "description": "Component type"
+        },
+        "responsibility": {
+          "type": "string",
+          "description": "Primary responsibility of this component"
+        }
+      },
+      "relationships": {
+        "dependsOn": {
+          "target": "Component",
+          "description": "Components this component depends on"
+        },
+        "provides": {
+          "target": "Feature",
+          "description": "Features provided by this component"
+        },
+        "implementedBy": {
+          "target": "PythonModule",
+          "description": "Modules that implement this component"
+        },
+        "configuredBy": {
+          "target": "Configuration",
+          "description": "Configuration options that affect this component"
+        }
+      }
+    },
+    "Schema": {
+      "@type": "Class",
+      "description": "A JSON-LD schema definition used by the system",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Schema name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Schema version"
+        },
+        "description": {
+          "type": "string",
+          "description": "Schema description"
+        },
+        "entity_count": {
+          "type": "integer",
+          "description": "Number of entity types defined"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain or use case for this schema"
+        }
+      },
+      "relationships": {
+        "usedBy": {
+          "target": "PythonFunction",
+          "description": "Functions that use this schema"
+        },
+        "validates": {
+          "target": "Concept",
+          "description": "Concepts validated by this schema"
+        },
+        "extendsSchema": {
+          "target": "Schema",
+          "description": "Schema this schema extends"
+        }
+      }
+    },
+    "Configuration": {
+      "@type": "Class",
+      "description": "A configuration option or setting",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Configuration parameter name"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "boolean", "object", "array"],
+          "description": "Configuration value type"
+        },
+        "default_value": {
+          "type": "string",
+          "description": "Default value"
+        },
+        "description": {
+          "type": "string",
+          "description": "Configuration description"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this configuration is required"
+        }
+      },
+      "relationships": {
+        "affects": {
+          "target": "Component",
+          "description": "Component affected by this configuration"
+        },
+        "usedBy": {
+          "target": "PythonFunction",
+          "description": "Functions that use this configuration"
+        },
+        "documentedIn": {
+          "target": "DocSection",
+          "description": "Documentation explaining this configuration"
+        }
+      }
+    },
+    "Concept": {
+      "@type": "Class",
+      "description": "A key concept or idea in the project domain",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Concept name"
+        },
+        "definition": {
+          "type": "string",
+          "description": "Concept definition"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain this concept belongs to"
+        },
+        "importance": {
+          "type": "string",
+          "enum": ["fundamental", "important", "supporting", "peripheral"],
+          "description": "Importance level of this concept"
+        },
+        "keywords": {
+          "type": "array",
+          "items": "string",
+          "description": "Related keywords and synonyms"
+        }
+      },
+      "relationships": {
+        "relatedTo": {
+          "target": "Concept",
+          "description": "Related concepts"
+        },
+        "prerequisiteFor": {
+          "target": "Concept",
+          "description": "Concepts that require understanding this concept"
+        },
+        "implementedBy": {
+          "target": "Feature",
+          "description": "Features that implement this concept"
+        },
+        "explainedIn": {
+          "target": "DocSection",
+          "description": "Documentation sections that explain this concept"
+        }
+      }
+    }
+  }
+}
