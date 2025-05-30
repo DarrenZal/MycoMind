@@ -26,5 +26,6 @@ colorama>=0.4.6
 structlog>=22.3.0
 
 # Optional: for advanced features
+rdflib>=7.0.0 # For RDF/JSON-LD parsing
 # neo4j>=5.0.0  # Uncomment for knowledge graph features
 # networkx>=3.0  # Uncomment for graph analysis

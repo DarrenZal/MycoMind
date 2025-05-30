@@ -469,7 +469,10 @@ class ObsidianNoteGenerator:
     def process_entities(
         self, 
         entities: List[Dict[str, Any]], 
-        metadata: Dict[str, Any]
+        metadata: Dict[str, Any],
+        file_as_entity: bool = False, # New parameter
+        original_file_path: Optional[str] = None, # New parameter
+        expected_entity_type: Optional[str] = None # New parameter
     ) -> Dict[str, Any]:
         """
         Process multiple entities and generate notes.
@@ -477,6 +480,9 @@ class ObsidianNoteGenerator:
         Args:
             entities: List of entity data
             metadata: Extraction metadata
+            file_as_entity: If true, treat the original_file_path as the primary entity to update.
+            original_file_path: The path to the original file if file_as_entity is true.
+            expected_entity_type: The expected type of the primary entity if file_as_entity is true.
             
         Returns:
             Summary of processing results
@@ -493,8 +499,94 @@ class ObsidianNoteGenerator:
         self.generated_files = []
         self.skipped_files = []
         self.backed_up_files = []
+
+        if file_as_entity and original_file_path:
+            # Find the primary entity that corresponds to the original file
+            primary_entity = None
+            original_filename_stem = Path(original_file_path).stem
+            
+            for entity in entities:
+                entity_name = entity.get('properties', {}).get('name')
+                entity_type = entity.get('type')
+                
+                # Prioritize exact match of name and optionally type
+                if entity_name and self._sanitize_filename(entity_name).lower() == original_filename_stem.lower():
+                    if expected_entity_type and entity_type != expected_entity_type:
+                        logger.debug(f"Skipping entity '{entity_name}' (type {entity_type}) as primary: expected type {expected_entity_type}")
+                        continue
+                    primary_entity = entity
+                    break
+                elif expected_entity_type and entity_type == expected_entity_type:
+                    # Fallback: if type matches and no name match found yet, take the first one
+                    if not primary_entity: # Only assign if no better match found
+                        primary_entity = entity
+            
+            if primary_entity:
+                logger.info(f"File-as-entity mode: Processing primary entity '{primary_entity.get('properties', {}).get('name')}' (type {primary_entity.get('type')}) for {original_file_path}")
+                
+                # Determine the processed subfolder path
+                original_dir = Path(original_file_path).parent
+                processed_folder_name = self.config.get('processed_folder_name', 'mycomind_processed')
+                processed_dir = original_dir / processed_folder_name
+                
+                # Ensure the processed directory exists
+                os.makedirs(processed_dir, exist_ok=True)
+                
+                # Define the path for the duplicated file
+                processed_file_path = processed_dir / Path(original_file_path).name
+                
+                try:
+                    # Read original file content
+                    with open(original_file_path, 'r', encoding='utf-8') as f:
+                        original_content = f.read()
+                    
+                    # Extract existing frontmatter and content
+                    frontmatter_match = re.match(r'---\s*\n(.*?)\n---\s*\n(.*)', original_content, re.DOTALL)
+                    existing_frontmatter_str = ""
+                    existing_content_body = original_content
+                    if frontmatter_match:
+                        existing_frontmatter_str = frontmatter_match.group(1)
+                        existing_content_body = frontmatter_match.group(2)
+                    
+                    # Parse existing frontmatter (if any)
+                    existing_frontmatter_data = {}
+                    if existing_frontmatter_str.strip():
+                        try:
+                            existing_frontmatter_data = yaml.safe_load(existing_frontmatter_str) or {}
+                        except yaml.YAMLError as e:
+                            logger.warning(f"Could not parse existing YAML frontmatter in {original_file_path}: {e}")
+                            existing_frontmatter_data = {}
+
+                    # Create new frontmatter from extracted entity
+                    new_frontmatter_data = self._create_frontmatter_data(primary_entity, metadata)
+                    
+                    # Merge new frontmatter with existing (new overrides old)
+                    merged_frontmatter_data = {**existing_frontmatter_data, **new_frontmatter_data}
+                    
+                    # Generate new YAML string
+                    updated_frontmatter_str = yaml.dump(merged_frontmatter_data, default_flow_style=False, allow_unicode=True)
+                    
+                    # Combine updated frontmatter and original content body
+                    updated_content = f"---\n{updated_frontmatter_str}---\n\n{existing_content_body.strip()}"
+                    
+                    # Save the updated file to the processed folder
+                    success = self.save_note(str(processed_file_path), updated_content)
+                    if success:
+                        results['generated_files'].append(str(processed_file_path))
+                    else:
+                        results['errors'].append(f"Failed to update/save primary entity file: {processed_file_path}")
+                    
+                    # Remove the primary entity from the list of entities to be processed as new notes
+                    entities.remove(primary_entity)
+
+                except Exception as e:
+                    logger.error(f"Error processing file-as-entity for {original_file_path}: {e}", exc_info=True)
+                    results['errors'].append(f"Error processing file-as-entity for {original_file_path}: {e}")
+            else:
+                logger.warning(f"File-as-entity mode: Could not find a primary entity for {original_file_path}. Treating as regular source.")
         
-        for entity in entities:
+        # Process remaining entities (or all entities if not file_as_entity mode)
+        for entity in entities: # This loop now processes only non-primary entities if file_as_entity was true
             try:
                 file_path, content = self.generate_note(entity, metadata)
                 success = self.save_note(file_path, content)
@@ -519,6 +611,48 @@ class ObsidianNoteGenerator:
         
         return results
     
+    def _create_frontmatter_data(self, entity: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Helper to create the frontmatter data dictionary (without dumping to YAML string).
+        This is useful for merging with existing frontmatter.
+        """
+        frontmatter_data = {}
+        
+        if 'type' in entity:
+            frontmatter_data['type'] = entity['type']
+        
+        properties = entity.get('properties', {})
+        for prop_name, prop_value in properties.items():
+            if isinstance(prop_value, list):
+                frontmatter_data[prop_name] = prop_value
+            elif isinstance(prop_value, dict):
+                frontmatter_data[prop_name] = prop_value
+            else:
+                frontmatter_data[prop_name] = str(prop_value)
+        
+        relationships = entity.get('relationships', {})
+        for rel_name, rel_targets in relationships.items():
+            if isinstance(rel_targets, list):
+                frontmatter_data[rel_name] = rel_targets
+            else:
+                frontmatter_data[rel_name] = rel_targets
+        
+        frontmatter_data['created'] = datetime.now().isoformat()
+        frontmatter_data['source'] = metadata.get('source_file', 'unknown')
+        frontmatter_data['extraction_date'] = metadata.get('extraction_date', datetime.now().isoformat())
+        
+        if 'confidence' in entity:
+            frontmatter_data['extraction_confidence'] = entity['confidence']
+        
+        if 'schema_version' in metadata:
+            frontmatter_data['schema_version'] = metadata['schema_version']
+        
+        tags = self._generate_tags(entity)
+        if tags:
+            frontmatter_data['tags'] = tags
+            
+        return frontmatter_data
+
     def validate_wikilinks(self, entities: List[Dict[str, Any]]) -> List[str]:
         """
         Validate that WikiLinks reference existing entities.
@@ -596,18 +730,7 @@ class ObsidianNoteGenerator:
             f"- **Skipped Files**: {len(self.skipped_files)}"
         ])
         
-        # Create index file
-        index_content = "\n".join(content_parts)
-        index_filename = f"extraction_index_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        index_path = os.path.join(self.vault_path, self.notes_folder, index_filename)
-        
-        # Save index note
-        if self.save_note(index_path, index_content):
-            logger.info(f"Index note created: {index_path}")
-            return index_path
-        else:
-            logger.error("Failed to create index note")
-            return ""
+        return "\n".join(content_parts)
 
 
 def create_obsidian_generator(config: Dict[str, Any]) -> ObsidianNoteGenerator:

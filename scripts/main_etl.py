@@ -30,7 +30,7 @@ from schema_parser import SchemaParser, SchemaDefinition
 from obsidian_utils import ObsidianNoteGenerator, create_obsidian_generator
 
 # LLM imports
-import openai
+from openai import OpenAI
 try:
     import anthropic
 except ImportError:
@@ -83,11 +83,11 @@ class LLMClient:
             api_key = self.config.get('api_key')
             if not api_key:
                 raise ValueError("OpenAI API key is required")
-            openai.api_key = api_key
+            self.openai_client = OpenAI(api_key=api_key)
             
-            # Set organization if provided
-            if 'organization' in self.config:
-                openai.organization = self.config['organization']
+            # Set organization if provided (OpenAI client handles this internally now)
+            # if 'organization' in self.config:
+            #     self.openai_client.organization = self.config['organization']
                 
         elif self.provider == 'anthropic':
             if not anthropic:
@@ -135,7 +135,7 @@ class LLMClient:
     
     def _openai_completion(self, prompt: str) -> str:
         """Generate completion using OpenAI API."""
-        response = openai.ChatCompletion.create(
+        response = self.openai_client.chat.completions.create(
             model=self.model,
             messages=[
                 {"role": "system", "content": "You are an expert knowledge extraction system."},
@@ -382,7 +382,7 @@ class MycoMindETL:
         # Processing configuration
         self.processing_config = self.config.get('processing', {})
         self.batch_size = self.processing_config.get('batch_size', 5)
-        self.enable_caching = self.processing_config.get('enable_caching', True)
+        self.enable_caching = True # Always enable caching for now
         self.cache_ttl = self.processing_config.get('cache_ttl', 3600)
         self.quality_threshold = self.processing_config.get('quality_threshold', 0.7)
         
@@ -430,7 +430,8 @@ class MycoMindETL:
         self, 
         source: str, 
         schema_path: str,
-        output_index: bool = True
+        output_index: bool = True,
+        file_as_entity: bool = False # New parameter
     ) -> ProcessingResult:
         """
         Process a complete data source through the ETL pipeline.
@@ -439,6 +440,7 @@ class MycoMindETL:
             source: Path to data source (file or URL)
             schema_path: Path to schema definition
             output_index: Whether to create an index note
+            file_as_entity: If true, treat the source file as the primary entity to update.
             
         Returns:
             Processing results
@@ -477,8 +479,8 @@ class MycoMindETL:
                         all_entities.extend(cached_result['entities'])
                         continue
                 
-                # Extract entities from chunk
-                chunk_result = self._extract_entities_from_chunk(chunk, schema_def)
+                # Extract entities from chunk with retry logic
+                chunk_result = self._extract_entities_from_chunk_with_retry(chunk, schema_def, file_as_entity)
                 
                 if chunk_result.success:
                     all_entities.extend(chunk_result.entities)
@@ -516,7 +518,10 @@ class MycoMindETL:
             
             obsidian_results = self.obsidian_generator.process_entities(
                 quality_entities, 
-                extraction_metadata
+                extraction_metadata,
+                file_as_entity=file_as_entity, # Pass the new parameter
+                original_file_path=source, # Pass original file path for in-place updates
+                expected_entity_type=getattr(self, '_expected_entity_type', None) # Pass expected entity type
             )
             
             # Create index note if requested
@@ -576,15 +581,31 @@ You are an expert knowledge extraction system. Extract structured information fr
 {schema_prompt}
 
 EXTRACTION RULES:
-1. Extract only information explicitly present in the text
-2. Use exact entity names when creating WikiLinks: [[Entity Name]]
-3. Maintain consistency in entity naming across extractions
-4. Include confidence scores for uncertain extractions (0.0 to 1.0)
-5. Preserve important context and relationships
+1. ALWAYS extract the main subject/title as a primary entity if it matches any schema type
+2. Look for explicit type indicators like "this is a [type]" or "[title] is a [type]"
+3. Extract secondary entities mentioned in the text
+4. Use exact entity names when creating WikiLinks: [[Entity Name]]
+5. Include confidence scores for uncertain extractions (0.0 to 1.0)
 6. Format relationship values as WikiLinks: "[[Entity Name]]"
+
+CRITICAL: If the text starts with a heading (# Title), that title is ALWAYS the primary entity.
+
+EXAMPLE 1:
+Input: "# Knowledge Management\nthis is a hyphal tip\n\nA system for organizing information..."
+Output: Extract "Knowledge Management" as a HyphalTip entity.
+
+EXAMPLE 2:
+Input: "# Bioregional Mapping\nthis is a hyphal tip\n\nA foundational project..."
+Output: Extract "Bioregional Mapping" as a HyphalTip entity.
 
 INPUT TEXT:
 {text_chunk}
+
+STEP-BY-STEP PROCESS:
+1. Identify the main heading/title (if present)
+2. Check if text contains type indicators ("this is a [type]")
+3. Extract the main entity first, then secondary entities
+4. Create relationships between entities
 
 OUTPUT FORMAT:
 Return a JSON object with the following structure:
@@ -595,11 +616,11 @@ Return a JSON object with the following structure:
       "properties": {{
         "name": "Entity Name",
         "description": "Entity description",
-        ...
+        "activityStatus": "alive"
       }},
       "relationships": {{
-        "relationshipName": "[[Target Entity]]",
-        "multipleRelationships": ["[[Entity1]]", "[[Entity2]]"]
+        "buildsOn": ["[[Related Entity 1]]", "[[Related Entity 2]]"],
+        "involvedWith": ["[[Organization Name]]"]
       }},
       "confidence": 0.95,
       "source_context": "relevant text snippet"
@@ -608,7 +629,7 @@ Return a JSON object with the following structure:
   "metadata": {{
     "extraction_date": "{datetime.now().isoformat()}",
     "schema_version": "{schema_def.version}",
-    "processing_notes": "any relevant notes"
+    "processing_notes": "extracted main entity and related entities"
   }}
 }}
 
@@ -617,12 +638,15 @@ Ensure the JSON is valid and properly formatted.
             
             # Get LLM response
             response = self.llm_client.generate_completion(extraction_prompt)
+            logger.debug(f"Raw LLM response: {response}")
             
             # Parse JSON response
             try:
                 result_data = json.loads(response)
+                logger.debug(f"Parsed JSON: {result_data}")
             except json.JSONDecodeError as e:
                 logger.error(f"Invalid JSON response from LLM: {e}")
+                logger.error(f"Raw response was: {response}")
                 return ProcessingResult(
                     success=False,
                     entities=[],
@@ -695,6 +719,43 @@ Ensure the JSON is valid and properly formatted.
         
         return errors
     
+    def _extract_entities_from_chunk_with_retry(
+        self, 
+        text_chunk: str, 
+        schema_def: SchemaDefinition,
+        file_as_entity: bool = False
+    ) -> ProcessingResult:
+        """Extract entities with retry logic for file-as-entity mode."""
+        max_retries = 2
+        
+        for attempt in range(max_retries + 1):
+            result = self._extract_entities_from_chunk(text_chunk, schema_def)
+            
+            if not file_as_entity or not hasattr(self, '_expected_entity_type'):
+                # Not in file-as-entity mode, return whatever we got
+                return result
+            
+            # Check if we got the expected entity type
+            expected_type = getattr(self, '_expected_entity_type', None)
+            if expected_type:
+                has_expected_entity = any(
+                    entity.get('type') == expected_type 
+                    for entity in result.entities
+                )
+                
+                if has_expected_entity or attempt == max_retries:
+                    # Found expected entity or exhausted retries
+                    if not has_expected_entity:
+                        logger.warning(f"Failed to extract expected entity type '{expected_type}' after {max_retries + 1} attempts")
+                    return result
+                
+                logger.info(f"Attempt {attempt + 1}: Expected entity type '{expected_type}' not found, retrying...")
+                time.sleep(0.5)  # Brief delay before retry
+            else:
+                return result
+        
+        return result
+    
     def _filter_by_quality(self, entities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Filter entities by quality threshold."""
         quality_entities = []
@@ -717,6 +778,8 @@ def main():
     parser.add_argument('--schema', '-s', required=True, help='Path to schema file')
     parser.add_argument('--source', required=True, help='Path to data source (file or URL)')
     parser.add_argument('--no-index', action='store_true', help='Skip creating index note')
+    parser.add_argument('--file-as-entity', nargs='?', const='auto', 
+                        help='Treat each input file as a primary entity to be updated with YAML frontmatter. Optionally specify expected entity type.')
     parser.add_argument('--dry-run', action='store_true', help='Validate configuration without processing')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
     
@@ -733,6 +796,10 @@ def main():
         # Initialize ETL pipeline
         etl = MycoMindETL(args.config)
         
+        # Set expected entity type if file-as-entity mode is enabled
+        if args.file_as_entity and args.file_as_entity != 'auto':
+            etl._expected_entity_type = args.file_as_entity
+        
         if args.dry_run:
             logger.info("Dry run mode - validating configuration")
             logger.info(f"Configuration loaded: {etl.config_manager.config_path}")
@@ -741,45 +808,120 @@ def main():
             logger.info("Configuration validation successful")
             return 0
         
-        # Process data source
-        logger.info("Starting ETL processing")
-        result = etl.process_data_source(
-            source=args.source,
-            schema_path=args.schema,
-            output_index=not args.no_index
-        )
+        # Determine if source is a file or directory
+        source_path = Path(args.source)
         
-        # Report results
-        if result.success:
-            logger.info("ETL processing completed successfully")
-            logger.info(f"Extracted {len(result.entities)} entities")
-            logger.info(f"Processing time: {result.processing_time:.2f} seconds")
+        if source_path.is_file():
+            logger.info(f"Processing single file: {source_path}")
+            results = [etl.process_data_source(
+                source=str(source_path),
+                schema_path=args.schema,
+                output_index=not args.no_index,
+                file_as_entity=args.file_as_entity # Pass the new argument
+            )]
             
-            obsidian_results = result.metadata.get('obsidian_results', {})
-            logger.info(f"Generated {len(obsidian_results.get('generated_files', []))} notes")
+            # Initialize variables for single file processing
+            all_extracted_entities = []
+            all_errors = []
+            total_processing_time = 0
+            total_generated_files = 0
+            total_skipped_files = 0
             
-            if obsidian_results.get('skipped_files'):
-                logger.warning(f"Skipped {len(obsidian_results['skipped_files'])} existing files")
+            for res in results:
+                all_extracted_entities.extend(res.entities)
+                all_errors.extend(res.errors)
+                total_processing_time += res.processing_time
+                if res.success:
+                    obsidian_res = res.metadata.get('obsidian_results', {})
+                    total_generated_files += len(obsidian_res.get('generated_files', []))
+                    total_skipped_files += len(obsidian_res.get('skipped_files', []))
+        elif source_path.is_dir():
+            logger.info(f"Processing directory: {source_path}")
+            markdown_files = list(source_path.glob('**/*.md'))
+            if not markdown_files:
+                logger.warning(f"No markdown files found in directory: {source_path}")
+                return 0
             
-            if result.errors:
-                logger.warning(f"Processing completed with {len(result.errors)} warnings:")
-                for error in result.errors[:5]:  # Show first 5 errors
-                    logger.warning(f"  - {error}")
-                if len(result.errors) > 5:
-                    logger.warning(f"  ... and {len(result.errors) - 5} more")
+            results = []
+            for md_file in markdown_files:
+                logger.info(f"Processing markdown file: {md_file}")
+                result = etl.process_data_source(
+                    source=str(md_file),
+                    schema_path=args.schema,
+                    output_index=False, # Only create index for the whole batch if desired
+                    file_as_entity=args.file_as_entity # Pass the new argument
+                )
+                results.append(result)
             
-            return 0
+            # Aggregate results and potentially create a single index note
+            all_extracted_entities = []
+            all_errors = []
+            total_processing_time = 0
+            total_generated_files = 0
+            total_skipped_files = 0
+            
+            for res in results:
+                all_extracted_entities.extend(res.entities)
+                all_errors.extend(res.errors)
+                total_processing_time += res.processing_time
+                if res.success:
+                    obsidian_res = res.metadata.get('obsidian_results', {})
+                    total_generated_files += len(obsidian_res.get('generated_files', []))
+                    total_skipped_files += len(obsidian_res.get('skipped_files', []))
+            
+            if not all_extracted_entities:
+                logger.warning("No entities extracted from any files in the directory.")
+                return 0
+            
+            # Create a single index note for the entire batch if requested
+            if not args.no_index:
+                logger.info("Creating aggregated index note for the directory.")
+                # Need to re-initialize obsidian_generator to ensure it has the correct config
+                # and can track all files generated across the batch.
+                # For simplicity, we'll just pass the aggregated entities to a new generator instance
+                # or modify the existing one to handle batch indexing.
+                # For now, let's assume the existing etl.obsidian_generator can handle this.
+                # A more robust solution might involve passing a list of all generated files.
+                
+                # For now, let's just create a simple index note with all entities
+                # and a generic metadata.
+                aggregated_metadata = {
+                    'source_file': str(source_path),
+                    'schema_version': etl.schema_parser.load_schema(args.schema).version,
+                    'extraction_date': datetime.now().isoformat(),
+                    'total_chunks': 'N/A (directory)',
+                    'processing_time': total_processing_time
+                }
+                index_path = etl.obsidian_generator.create_index_note(
+                    all_extracted_entities,
+                    aggregated_metadata
+                )
+                if index_path:
+                    logger.info(f"Aggregated index note created: {index_path}")
         else:
-            logger.error("ETL processing failed")
-            for error in result.errors:
-                logger.error(f"  - {error}")
+            logger.error(f"Invalid source path: {source_path}. Must be a file or a directory.")
             return 1
+        
+        # Report aggregated results
+        logger.info("ETL processing completed for all sources")
+        logger.info(f"Extracted {len(all_extracted_entities)} total entities")
+        logger.info(f"Total processing time: {total_processing_time:.2f} seconds")
+        logger.info(f"Generated {total_generated_files} notes")
+        if total_skipped_files:
+            logger.warning(f"Skipped {total_skipped_files} existing files")
+        
+        if all_errors:
+            logger.warning(f"Processing completed with {len(all_errors)} warnings/errors:")
+            for error in all_errors[:5]:  # Show first 5 errors
+                logger.warning(f"  ... and {len(all_errors) - 5} more")
+        
+        return 0 if not all_errors else 1
             
     except KeyboardInterrupt:
         logger.info("Processing interrupted by user")
         return 1
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error during ETL pipeline: {e}")
         return 1
 
 

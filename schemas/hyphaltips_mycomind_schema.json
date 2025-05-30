@@ -1,0 +1,212 @@
+{
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "myco": "https://mycomind.org/schema/"
+  },
+  "@type": "Schema",
+  "name": "Converted MycoMind Schema",
+  "description": "Schema converted from RDF/JSON-LD ontology",
+  "version": "1.0.0",
+  "entities": {
+    "HyphalTip": {
+      "@type": "Class",
+      "description": "A general concept representing any thread or idea in one's life, such as an idea, project, or ongoing interest.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "The name or title of an entity."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of an entity.",
+          "required": false
+        },
+        "activityStatus": {
+          "type": "string",
+          "description": "The current activity status of a HyphalTip (e.g., 'alive', 'dormant', 'completed', 'archived').",
+          "required": false
+        }
+      },
+      "relationships": {
+        "mergedWith": {
+          "target": "HyphalTip",
+          "description": "Links a HyphalTip to another HyphalTip it has merged with."
+        },
+        "forkedFrom": {
+          "target": "HyphalTip",
+          "description": "Links a HyphalTip to another HyphalTip it branched from."
+        },
+        "buildsOn": {
+          "target": "HyphalTip",
+          "description": "Links a HyphalTip to another HyphalTip it builds upon or develops from."
+        },
+        "inspiredBy": {
+          "target": "HyphalTip",
+          "description": "Links a HyphalTip to another HyphalTip that inspired it."
+        },
+        "supersedes": {
+          "target": "HyphalTip",
+          "description": "Links a HyphalTip to another HyphalTip it supersedes or makes obsolete."
+        },
+        "involvedWith": {
+          "target": "Organization",
+          "description": "Links a HyphalTip to an Organization it is associated with."
+        },
+        "collaborator": {
+          "target": "Person",
+          "description": "Links a HyphalTip to a Person who is a collaborator."
+        },
+        "hasNote": {
+          "target": "Note",
+          "description": "Links a HyphalTip to a related Note."
+        },
+        "hasMeeting": {
+          "target": "Meeting",
+          "description": "Links a HyphalTip to a related Meeting."
+        },
+        "hasActionItem": {
+          "target": "ActionItem",
+          "description": "Links a HyphalTip to a related Action Item."
+        }
+      }
+    },
+    "Idea": {
+      "@type": "Class",
+      "description": "A nascent thought or concept.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Name of the idea",
+          "default_value_from_label": true
+        }
+      },
+      "relationships": {}
+    },
+    "Project": {
+      "@type": "Class",
+      "description": "A structured endeavor with defined stages.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Name of the project",
+          "default_value_from_label": true
+        },
+        "status": {
+          "type": "string",
+          "description": "The current stage or status of a project (e.g., 'idea', 'planning', 'in-progress', 'on-hold', 'completed', 'archived').",
+          "required": false
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of a project or meeting.",
+          "required": false,
+          "format": "date"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of a project or meeting.",
+          "required": false,
+          "format": "date"
+        }
+      },
+      "relationships": {}
+    },
+    "Organization": {
+      "@type": "Class",
+      "description": "A group or institution, e.g., a workplace, club, or community.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "The name or title of an entity."
+        }
+      },
+      "relationships": {}
+    },
+    "Person": {
+      "@type": "Class",
+      "description": "An individual, e.g., a collaborator, friend, or contact.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "The name or title of an entity."
+        }
+      },
+      "relationships": {}
+    },
+    "Note": {
+      "@type": "Class",
+      "description": "A piece of written information or observation.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "The name or title of an entity."
+        }
+      },
+      "relationships": {}
+    },
+    "Meeting": {
+      "@type": "Class",
+      "description": "A scheduled gathering for discussion or collaboration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "The name or title of an entity."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of a project or meeting.",
+          "required": false,
+          "format": "date"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of a project or meeting.",
+          "required": false,
+          "format": "date"
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of a meeting.",
+          "required": false,
+          "format": "date"
+        }
+      },
+      "relationships": {
+        "attendee": {
+          "target": "Person",
+          "description": "A person attending a meeting."
+        }
+      }
+    },
+    "ActionItem": {
+      "@type": "Class",
+      "description": "A specific task or step to be completed.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "The name or title of an entity."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The due date for an action item.",
+          "required": false,
+          "format": "date"
+        }
+      },
+      "relationships": {
+        "assignedTo": {
+          "target": "Person",
+          "description": "The person assigned to an action item."
+        }
+      }
+    }
+  }
+}

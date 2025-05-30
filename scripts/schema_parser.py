@@ -494,6 +494,9 @@ class SchemaParser:
         relationships = entity_data.get('relationships', {})
         for rel_name, rel_targets in relationships.items():
             if rel_name in entity_def.relationships:
+                # Skip validation for empty arrays or None values
+                if rel_targets is None or (isinstance(rel_targets, list) and len(rel_targets) == 0):
+                    continue
                 rel_def = entity_def.relationships[rel_name]
                 rel_errors = self._validate_relationship_value(rel_name, rel_targets, rel_def)
                 errors.extend(rel_errors)

@@ -83,6 +83,52 @@ MycoMind/
 - **`schemas/example_schemas/personal_knowledge.json`**: Example schema for personal knowledge
 - **`examples/sample_data/sample_document.txt`**: Sample document for testing
 
+## Processing Modes
+
+### Standard Mode: Extract Entities to New Notes
+Creates new structured notes for each extracted entity:
+
+```bash
+# Process a single file
+python scripts/main_etl.py \
+  --config config.json \
+  --schema schemas/your_schema.json \
+  --source document.md
+
+# Process a directory of files
+python scripts/main_etl.py \
+  --config config.json \
+  --schema schemas/your_schema.json \
+  --source /path/to/documents/
+```
+
+**Output**: Creates new notes in `/your/vault/mycomind_extracted/` organized by entity type.
+
+### File-as-Entity Mode: Enhance Original Files
+Updates your original files with rich YAML frontmatter while preserving content:
+
+```bash
+# Process HyphalTips (or any entity type)
+python scripts/main_etl.py \
+  --config config.json \
+  --schema schemas/hyphaltips_schema.json \
+  --source /path/to/files \
+  --file-as-entity HyphalTip
+
+# Auto-detect entity type
+python scripts/main_etl.py \
+  --config config.json \
+  --schema schemas/your_schema.json \
+  --source /path/to/files \
+  --file-as-entity
+```
+
+**Output**: Creates enhanced versions in `/your/vault/mycomind_processed/` with:
+- Rich YAML frontmatter with extracted properties
+- Relationship links as `[[WikiLinks]]`
+- Extraction metadata and confidence scores
+- Original content preserved
+
 ## Common Use Cases
 
 ### 1. Extract from Meeting Notes

@@ -5,10 +5,14 @@ A Personal Knowledge Management (PKM) system that performs LLM-driven, ontology-
 ## 🌟 Features
 
 - **Ontology-Driven Extraction**: Uses JSON-LD schemas to define knowledge structures
-- **Obsidian Integration**: Creates structured Markdown notes with YAML frontmatter
-- **LLM-Powered Processing**: Leverages language models for intelligent information extraction
+- **Dual Processing Modes**: 
+  - **Standard Mode**: Creates new structured notes for extracted entities
+  - **File-as-Entity Mode**: Updates original files with rich YAML frontmatter while preserving content
+- **Obsidian Integration**: Creates structured Markdown notes with YAML frontmatter and WikiLinks
+- **LLM-Powered Processing**: Leverages language models for intelligent information extraction with retry logic
 - **Semantic Linking**: Automatically creates `[[WikiLinks]]` for entity relationships
-- **Configurable Workflows**: Easy-to-customize ETL pipelines
+- **Robust Validation**: Schema-based validation with proper handling of empty relationships
+- **Configurable Workflows**: Easy-to-customize ETL pipelines with caching and quality filtering
 - **Self-Documenting**: The project uses its own principles to maintain its documentation
 
 ## 🚀 Quick Start
