@@ -145,22 +145,22 @@
         },
         "expertise": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": "string",
           "description": "Areas of expertise and skills"
         },
         "interests": {
           "type": "array", 
-          "items": {"type": "string"},
+          "items": "string",
           "description": "Personal and professional interests"
         },
         "domainTags": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": "string",
           "description": "Primary domains of work (e.g., Regenerative Agriculture, Climate Adaptation)"
         },
         "methodTags": {
           "type": "array",
-          "items": {"type": "string"}, 
+          "items": "string", 
           "description": "Methodological approaches (e.g., Permaculture, Doughnut Economics)"
         },
         "currentRole": {
@@ -266,7 +266,7 @@
         },
         "tags": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": "string",
           "description": "Tags associated with the note"
         }
       }
