@@ -127,7 +127,20 @@ open web_query_interface.html
 - Sample queries and SPARQL editor
 - Works on any system with a modern browser
 
-**Option 2: Fuseki Graph Database (Advanced)**
+**Option 2: JavaScript Command-Line Interface**
+```bash
+# Install Node.js dependencies (one-time setup)
+npm install @comunica/query-sparql
+
+# Interactive command-line querying - no Java required!
+node scripts/js_query_client.js --load knowledge_graph.jsonld --interactive
+```
+- Command-line SPARQL querying without Java
+- Interactive menu with sample queries
+- Same JavaScript engine as web interface
+- Formatted table output
+
+**Option 3: Fuseki Graph Database (Advanced)**
 ```bash
 # Set up Fuseki server (requires Java 11+)
 python scripts/setup_fuseki.py --download

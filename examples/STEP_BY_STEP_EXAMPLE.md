@@ -103,7 +103,29 @@ This opens a beautiful web interface where you can:
 3. **Write custom SPARQL**: Edit queries in the built-in editor
 4. **View results**: See results in formatted tables
 
-### 🖥️ Option 2: Fuseki Graph Database (Java 11+ Required)
+### 💻 Option 2: JavaScript Command-Line Interface (Node.js)
+
+**No Java required! Command-line interface using the same JavaScript engine.**
+
+```bash
+# Install Node.js dependencies (one-time setup)
+npm install @comunica/query-sparql
+
+# Interactive querying
+node scripts/js_query_client.js --load mycomind_knowledge_graph.jsonld --interactive
+
+# Execute specific queries
+node scripts/js_query_client.js --load mycomind_knowledge_graph.jsonld --query "SELECT * WHERE { ?s ?p ?o } LIMIT 10"
+```
+
+This provides:
+- Command-line SPARQL querying without Java
+- Interactive menu with sample queries
+- Same JavaScript engine as the web interface
+- Formatted table output
+- Support for custom queries
+
+### 🖥️ Option 3: Fuseki Graph Database (Java 11+ Required)
 
 **Check your Java version first:**
 
