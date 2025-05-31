@@ -387,7 +387,9 @@ class YAMLToJSONLDConverter:
         """
         try:
             # Create output directory if needed
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            output_dir = os.path.dirname(output_path)
+            if output_dir:  # Only create directory if there is one
+                os.makedirs(output_dir, exist_ok=True)
             
             # Create JSON-LD document
             jsonld_doc = {
