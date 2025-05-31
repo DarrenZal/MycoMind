@@ -7,7 +7,7 @@ A comprehensive Personal Knowledge Management (PKM) system that transforms unstr
 - **🧠 AI-Powered Knowledge Extraction**: Uses large language models to automatically identify entities, relationships, and concepts from unstructured text
 - **📝 Obsidian-Compatible**: Generates markdown files with YAML frontmatter that work seamlessly in Obsidian vaults with WikiLink support
 - **🕸️ Semantic Web Integration**: Built on JSON-LD, RDF, and SPARQL standards for maximum interoperability
-- **📊 Graph Database Backend**: Apache Jena Fuseki integration for powerful querying and analysis
+- **📊 Multiple Query Options**: JavaScript web interface (no Java required) + Apache Jena Fuseki for advanced users
 - **🔗 Intelligent Entity Linking**: Automatically resolves WikiLinks (`[[Entity Name]]`) and connects related entities across your knowledge base
 - **📝 Schema-Driven Architecture**: Flexible ontology system supporting custom knowledge domains
 - **🔄 Complete ETL Pipeline**: From raw text to structured knowledge graphs with full provenance tracking
@@ -115,9 +115,21 @@ python scripts/main_etl.py --schema schemas/hyphaltips_mycomind_schema.json --so
 python scripts/main_etl.py --schema schemas/your_custom_schema.json --source data/
 ```
 
-### Graph Database Operations
+### Knowledge Graph Querying
+
+**Option 1: JavaScript Web Interface (Recommended)**
 ```bash
-# Set up Fuseki server
+# Open browser-based query interface - no Java required!
+open web_query_interface.html
+```
+- Beautiful, responsive web interface
+- Load JSON-LD files directly in browser
+- Sample queries and SPARQL editor
+- Works on any system with a modern browser
+
+**Option 2: Fuseki Graph Database (Advanced)**
+```bash
+# Set up Fuseki server (requires Java 11+)
 python scripts/setup_fuseki.py --download
 python scripts/setup_fuseki.py --start
 

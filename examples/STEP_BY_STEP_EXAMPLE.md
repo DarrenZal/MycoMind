@@ -88,16 +88,31 @@ python scripts/graph_db_client.py --load mycomind_knowledge_graph.jsonld
 
 ## Step 6: Query Your Knowledge Graph
 
-### Prerequisites Check
+### 🌐 Option 1: JavaScript Web Interface (Recommended)
 
-First, verify you have Java 11+ installed:
+**No Java required! Works in any modern browser.**
+
+```bash
+# Open the web query interface
+open web_query_interface.html
+```
+
+This opens a beautiful web interface where you can:
+1. **Load your knowledge graph**: Click "Choose File" and select `mycomind_knowledge_graph.jsonld`
+2. **Try sample queries**: Click any sample query button (👤 Find People, 🚀 Find Projects, etc.)
+3. **Write custom SPARQL**: Edit queries in the built-in editor
+4. **View results**: See results in formatted tables
+
+### 🖥️ Option 2: Fuseki Graph Database (Java 11+ Required)
+
+**Check your Java version first:**
 
 ```bash
 # Check Java version
 java -version
 
 # Should show version 11 or higher
-# If you have Java 8, you'll need to upgrade for Fuseki to work
+# If you have Java 8, use the JavaScript interface above instead
 ```
 
 **If you have Java 11+:**
@@ -113,7 +128,7 @@ python scripts/graph_db_client.py --interactive
 
 **If you have Java 8 (like many macOS systems):**
 
-You can still explore your JSON-LD file directly or use alternative tools. The queries below show what you could run once you upgrade Java.
+Use the JavaScript web interface above - it's actually more user-friendly!
 
 ### Sample Queries to Try
 
