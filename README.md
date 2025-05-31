@@ -5,9 +5,10 @@ A comprehensive Personal Knowledge Management (PKM) system that transforms unstr
 ## 🌟 Key Features
 
 - **🧠 AI-Powered Knowledge Extraction**: Uses large language models to automatically identify entities, relationships, and concepts from unstructured text
+- **📝 Obsidian-Compatible**: Generates markdown files with YAML frontmatter that work seamlessly in Obsidian vaults with WikiLink support
 - **🕸️ Semantic Web Integration**: Built on JSON-LD, RDF, and SPARQL standards for maximum interoperability
 - **📊 Graph Database Backend**: Apache Jena Fuseki integration for powerful querying and analysis
-- **🔗 Intelligent Entity Linking**: Automatically resolves and connects related entities across your knowledge base
+- **🔗 Intelligent Entity Linking**: Automatically resolves WikiLinks (`[[Entity Name]]`) and connects related entities across your knowledge base
 - **📝 Schema-Driven Architecture**: Flexible ontology system supporting custom knowledge domains
 - **🔄 Complete ETL Pipeline**: From raw text to structured knowledge graphs with full provenance tracking
 - **🌐 Standards-Based**: Compatible with Schema.org, Murmurations, and other semantic web vocabularies
