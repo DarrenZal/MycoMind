@@ -17,7 +17,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "required": true,
+          "required": "true",
           "description": "The name or title of the hyphal tip"
         },
         "description": {
@@ -106,7 +106,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "required": true,
+          "required": "true",
           "description": "Full name of the person"
         },
         "givenName": {
@@ -205,7 +205,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "required": true,
+          "required": "true",
           "description": "Name of the organization"
         },
         "description": {
@@ -252,7 +252,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "required": true,
+          "required": "true",
           "description": "Title of the note"
         },
         "content": {
@@ -277,7 +277,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "required": true,
+          "required": "true",
           "description": "Name or title of the meeting"
         },
         "description": {
@@ -312,7 +312,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "required": true,
+          "required": "true",
           "description": "Name of the action item"
         },
         "description": {

@@ -14,8 +14,11 @@ This guide walks you through the complete MycoMind workflow using the included s
 # Copy the example configuration
 cp examples/config_example.json config.json
 
-# Edit config.json and add your OpenAI API key
-# Change "your_openai_api_key_here" to your actual API key
+# Edit config.json and make these changes:
+# 1. Change "your_openai_api_key_here" to your actual OpenAI API key
+# 2. Update "vault_path": "/path/to/your/obsidian/vault" to your actual vault path
+#    For example: "/Users/yourname/Documents/MyObsidianVault"
+#    Or create a new directory: "/Users/yourname/MycoMind/knowledge_vault"
 ```
 
 ## Step 2: Process Unstructured Text with AI Extraction
