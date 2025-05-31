@@ -16,9 +16,9 @@ cp examples/config_example.json config.json
 
 # Edit config.json and make these changes:
 # 1. Change "your_openai_api_key_here" to your actual OpenAI API key
-# 2. Update "vault_path": "/path/to/your/obsidian/vault" to your actual vault path
-#    For example: "/Users/yourname/Documents/MyObsidianVault"
-#    Or create a new directory: "/Users/yourname/MycoMind/knowledge_vault"
+# 2. Update "vault_path": "/path/to/your/obsidian/vault" to your desired output path
+#    For this demo, you can use: "./demo_vault" (creates a demo_vault folder)
+#    Or use your existing Obsidian vault: "/Users/yourname/Documents/MyObsidianVault"
 ```
 
 ## Step 2: Process Unstructured Text with AI Extraction
