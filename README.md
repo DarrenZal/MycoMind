@@ -15,20 +15,20 @@ A comprehensive Personal Knowledge Management (PKM) system that transforms unstr
 
 ## 🚀 Quick Start
 
-### 🎯 See It In Action
+### 🎯 Complete Step-by-Step Example
 
-Experience the complete workflow in under 2 minutes:
+Follow our comprehensive guide to experience the full workflow:
 
-```bash
-# Run the complete demo - no configuration needed!
-python examples/mycomind_demo.py
-```
+**[📖 Step-by-Step Example Guide](examples/STEP_BY_STEP_EXAMPLE.md)**
 
-This demo showcases:
-- **Entity Extraction**: Processes unstructured text about the MycoMind project
-- **Knowledge Graph Creation**: Extracts HyphalTip and RegenerativePerson entities
-- **Graph Database Loading**: Imports into Apache Jena Fuseki
-- **SPARQL Querying**: Demonstrates relationship discovery and network analysis
+This guide walks you through:
+- **AI Entity Extraction**: Process unstructured text about the MycoMind project
+- **YAML Frontmatter Generation**: Create structured markdown files
+- **JSON-LD Conversion**: Transform to semantic web standards
+- **Graph Database Setup**: Install and configure Apache Jena Fuseki
+- **SPARQL Querying**: Discover relationships and analyze your knowledge network
+
+Uses realistic sample data including HyphalTip and RegenerativePerson entities with collaboration relationships.
 
 ### 📋 Full Installation
 
