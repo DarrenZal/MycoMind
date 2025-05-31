@@ -219,7 +219,11 @@ class YAMLToJSONLDConverter:
                 logger.warning(f"Unknown entity type '{entity_type}' in {filename}")
                 return None
             
-            entity_schema = self.schema_def.entities[entity_type]
+            entity_def = self.schema_def.entities[entity_type]
+            entity_schema = {
+                'properties': entity_def.properties if hasattr(entity_def, 'properties') else {},
+                'relationships': entity_def.relationships if hasattr(entity_def, 'relationships') else {}
+            }
             
             # Generate IRI for this entity
             entity_name = frontmatter.get('name', Path(filename).stem)
@@ -338,7 +342,8 @@ class YAMLToJSONLDConverter:
         # Add schema-specific mappings
         for entity_type, entity_def in self.schema_def.entities.items():
             # Add property mappings
-            for prop_name, prop_def in entity_def.get('properties', {}).items():
+            properties = entity_def.properties if hasattr(entity_def, 'properties') else {}
+            for prop_name, prop_def in properties.items():
                 prop_type = prop_def.get('type', 'string')
                 
                 if prop_type == 'integer':

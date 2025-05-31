@@ -88,23 +88,41 @@ python scripts/graph_db_client.py --load mycomind_knowledge_graph.jsonld
 
 ## Step 6: Query Your Knowledge Graph
 
-### Interactive Querying
+### Prerequisites Check
+
+First, verify you have Java 11+ installed:
 
 ```bash
-# Start the interactive query interface
+# Check Java version
+java -version
+
+# Should show version 11 or higher
+# If you have Java 8, you'll need to upgrade for Fuseki to work
+```
+
+**If you have Java 11+:**
+
+```bash
+# Load your knowledge graph into Fuseki
+python scripts/graph_db_client.py --create-dataset
+python scripts/graph_db_client.py --load mycomind_knowledge_graph.jsonld
+
+# Start interactive querying
 python scripts/graph_db_client.py --interactive
 ```
 
-This provides a menu with:
-- Sample queries
-- Custom SPARQL input
-- Entity search
-- Statistics
+**If you have Java 8 (like many macOS systems):**
+
+You can still explore your JSON-LD file directly or use alternative tools. The queries below show what you could run once you upgrade Java.
 
 ### Sample Queries to Try
 
+Based on our test data, here are queries that work with the generated knowledge graph:
+
 1. **Find all HyphalTips:**
 ```sparql
+PREFIX myco: <http://mycomind.org/kg/ontology/>
+
 SELECT ?tip ?name ?description ?status WHERE {
     ?tip a myco:HyphalTip ;
          myco:name ?name .
@@ -113,18 +131,29 @@ SELECT ?tip ?name ?description ?status WHERE {
 }
 ```
 
+**Expected Results:**
+- MycoMind: Personal Knowledge Management System (status: alive)
+- public external organizational AI agent (status: alive)
+
 2. **Find RegenerativePerson entities:**
 ```sparql
-SELECT ?person ?name ?location ?expertise WHERE {
+PREFIX myco: <http://mycomind.org/kg/ontology/>
+
+SELECT ?person ?name ?location ?role WHERE {
     ?person a myco:RegenerativePerson ;
             myco:name ?name .
     OPTIONAL { ?person myco:location ?location }
-    OPTIONAL { ?person myco:expertise ?expertise }
+    OPTIONAL { ?person myco:currentRole ?role }
 }
 ```
 
+**Expected Results:**
+- Shawn (location: Portland, role: Developer)
+
 3. **Discover collaboration relationships:**
 ```sparql
+PREFIX myco: <http://mycomind.org/kg/ontology/>
+
 SELECT ?entity1 ?name1 ?entity2 ?name2 WHERE {
     ?entity1 myco:name ?name1 ;
              myco:collaborator ?entity2 .
@@ -132,8 +161,13 @@ SELECT ?entity1 ?name1 ?entity2 ?name2 WHERE {
 }
 ```
 
+**Expected Results:**
+- MycoMind collaborates with Shawn
+
 4. **Find people in Portland:**
 ```sparql
+PREFIX myco: <http://mycomind.org/kg/ontology/>
+
 SELECT ?person ?name ?role WHERE {
     ?person a myco:RegenerativePerson ;
             myco:name ?name ;
@@ -142,13 +176,68 @@ SELECT ?person ?name ?role WHERE {
 }
 ```
 
+**Expected Results:**
+- Shawn (role: Developer)
+
+5. **Find organizations and their relationships:**
+```sparql
+PREFIX myco: <http://mycomind.org/kg/ontology/>
+
+SELECT ?org ?orgName ?member ?memberName WHERE {
+    ?org a myco:Organization ;
+         myco:name ?orgName ;
+         myco:hasMember ?member .
+    ?member myco:name ?memberName .
+}
+```
+
+**Expected Results:**
+- Transition Towns has member Shawn
+
 ### Web Interface Queries
 
-You can also use the Fuseki web interface at http://localhost:3030:
+**If you have Java 11+ and Fuseki running:**
+
+You can use the Fuseki web interface at http://localhost:3030:
 1. Go to "dataset.html"
 2. Select the "mycomind" dataset
 3. Click the "query" tab
 4. Enter SPARQL queries and execute them
+
+### Testing Queries Without Fuseki
+
+If you can't run Fuseki, you can still:
+
+1. **Examine the JSON-LD file directly:**
+```bash
+# Pretty print the knowledge graph
+python -m json.tool mycomind_knowledge_graph.jsonld
+```
+
+2. **Use online SPARQL tools:**
+- Upload your JSON-LD to tools like YASGUI or Apache Jena online
+- Test queries in a web-based environment
+
+3. **Use Python RDFLib for local querying:**
+```python
+from rdflib import Graph
+
+# Load the knowledge graph
+g = Graph()
+g.parse("mycomind_knowledge_graph.jsonld", format="json-ld")
+
+# Run a simple query
+results = g.query("""
+    PREFIX myco: <http://mycomind.org/kg/ontology/>
+    SELECT ?name WHERE {
+        ?person a myco:RegenerativePerson ;
+                myco:name ?name .
+    }
+""")
+
+for row in results:
+    print(row)
+```
 
 ## Step 7: Explore Advanced Features
 
