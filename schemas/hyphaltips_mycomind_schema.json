@@ -1,210 +1,344 @@
 {
   "@context": {
     "@vocab": "https://schema.org/",
-    "myco": "https://mycomind.org/schema/"
+    "myco": "https://mycomind.org/schema/",
+    "hyphal": "http://example.org/hyphaltips-ontology#",
+    "regen": "https://regen-map.org/schema/",
+    "geo": "http://www.w3.org/2003/01/geo/wgs84_pos#"
   },
   "@type": "Schema",
-  "name": "Converted MycoMind Schema",
-  "description": "Schema converted from RDF/JSON-LD ontology",
+  "name": "HyphalTips MycoMind Schema",
+  "description": "Combined schema for HyphalTips ontology and RegenerativePerson schema for MycoMind knowledge management",
   "version": "1.0.0",
   "entities": {
     "HyphalTip": {
       "@type": "Class",
-      "description": "A general concept representing any thread or idea in one's life, such as an idea, project, or ongoing interest.",
+      "description": "A general concept representing any thread or idea in one's life, such as an idea, project, or ongoing interest",
       "properties": {
         "name": {
           "type": "string",
-          "required": false,
-          "description": "The name or title of an entity."
+          "required": true,
+          "description": "The name or title of the hyphal tip"
         },
         "description": {
           "type": "string",
-          "description": "A brief description of an entity.",
-          "required": false
+          "description": "A brief description of the hyphal tip"
         },
         "activityStatus": {
           "type": "string",
-          "description": "The current activity status of a HyphalTip (e.g., 'alive', 'dormant', 'completed', 'archived').",
-          "required": false
+          "description": "The current activity status (e.g., 'alive', 'dormant', 'completed', 'archived')",
+          "enum": ["alive", "dormant", "completed", "archived"]
         }
       },
       "relationships": {
         "mergedWith": {
           "target": "HyphalTip",
-          "description": "Links a HyphalTip to another HyphalTip it has merged with."
+          "description": "Links to another HyphalTip it has merged with"
         },
         "forkedFrom": {
-          "target": "HyphalTip",
-          "description": "Links a HyphalTip to another HyphalTip it branched from."
+          "target": "HyphalTip", 
+          "description": "Links to another HyphalTip it branched from"
         },
         "buildsOn": {
           "target": "HyphalTip",
-          "description": "Links a HyphalTip to another HyphalTip it builds upon or develops from."
+          "description": "Links to another HyphalTip it builds upon or develops from"
         },
         "inspiredBy": {
           "target": "HyphalTip",
-          "description": "Links a HyphalTip to another HyphalTip that inspired it."
+          "description": "Links to another HyphalTip that inspired it"
         },
         "supersedes": {
           "target": "HyphalTip",
-          "description": "Links a HyphalTip to another HyphalTip it supersedes or makes obsolete."
+          "description": "Links to another HyphalTip it supersedes or makes obsolete"
         },
         "involvedWith": {
           "target": "Organization",
-          "description": "Links a HyphalTip to an Organization it is associated with."
+          "description": "Links to an Organization it is associated with"
         },
         "collaborator": {
-          "target": "Person",
-          "description": "Links a HyphalTip to a Person who is a collaborator."
+          "target": "RegenerativePerson",
+          "description": "Links to a Person who is a collaborator"
         },
         "hasNote": {
           "target": "Note",
-          "description": "Links a HyphalTip to a related Note."
+          "description": "Links to a related Note"
         },
         "hasMeeting": {
           "target": "Meeting",
-          "description": "Links a HyphalTip to a related Meeting."
+          "description": "Links to a related Meeting"
         },
         "hasActionItem": {
           "target": "ActionItem",
-          "description": "Links a HyphalTip to a related Action Item."
+          "description": "Links to a related Action Item"
+        }
+      }
+    },
+    "Project": {
+      "@type": "Class",
+      "description": "A structured endeavor with defined stages",
+      "extends": "HyphalTip",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "The current stage or status of a project",
+          "enum": ["idea", "planning", "in-progress", "on-hold", "completed", "archived"]
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The start date of the project"
+        },
+        "endDate": {
+          "type": "string", 
+          "format": "date",
+          "description": "The end date of the project"
         }
       }
     },
     "Idea": {
       "@type": "Class",
-      "description": "A nascent thought or concept.",
+      "description": "A nascent thought or concept",
+      "extends": "HyphalTip"
+    },
+    "RegenerativePerson": {
+      "@type": "Class",
+      "description": "A person engaged in regenerative economy activities, with enhanced properties for network discovery and visualization",
       "properties": {
         "name": {
           "type": "string",
           "required": true,
-          "description": "Name of the idea",
-          "default_value_from_label": true
-        }
-      },
-      "relationships": {}
-    },
-    "Project": {
-      "@type": "Class",
-      "description": "A structured endeavor with defined stages.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": true,
-          "description": "Name of the project",
-          "default_value_from_label": true
+          "description": "Full name of the person"
         },
-        "status": {
+        "givenName": {
           "type": "string",
-          "description": "The current stage or status of a project (e.g., 'idea', 'planning', 'in-progress', 'on-hold', 'completed', 'archived').",
-          "required": false
+          "description": "First name"
         },
-        "startDate": {
+        "familyName": {
           "type": "string",
-          "description": "The start date of a project or meeting.",
-          "required": false,
-          "format": "date"
+          "description": "Last name"
         },
-        "endDate": {
+        "nickname": {
           "type": "string",
-          "description": "The end date of a project or meeting.",
-          "required": false,
-          "format": "date"
-        }
-      },
-      "relationships": {}
-    },
-    "Organization": {
-      "@type": "Class",
-      "description": "A group or institution, e.g., a workplace, club, or community.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": false,
-          "description": "The name or title of an entity."
-        }
-      },
-      "relationships": {}
-    },
-    "Person": {
-      "@type": "Class",
-      "description": "An individual, e.g., a collaborator, friend, or contact.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": false,
-          "description": "The name or title of an entity."
-        }
-      },
-      "relationships": {}
-    },
-    "Note": {
-      "@type": "Class",
-      "description": "A piece of written information or observation.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": false,
-          "description": "The name or title of an entity."
-        }
-      },
-      "relationships": {}
-    },
-    "Meeting": {
-      "@type": "Class",
-      "description": "A scheduled gathering for discussion or collaboration.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "required": false,
-          "description": "The name or title of an entity."
+          "description": "Common name or handle used informally"
         },
-        "startDate": {
+        "pronouns": {
           "type": "string",
-          "description": "The start date of a project or meeting.",
-          "required": false,
-          "format": "date"
+          "description": "Preferred pronouns (e.g., she/her, they/them)"
         },
-        "endDate": {
+        "email": {
           "type": "string",
-          "description": "The end date of a project or meeting.",
-          "required": false,
-          "format": "date"
+          "format": "email",
+          "description": "Email address"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "Personal website or profile URL"
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short biographical description"
         },
         "location": {
           "type": "string",
-          "description": "The location of a meeting.",
-          "required": false,
-          "format": "date"
+          "description": "Current location or base"
+        },
+        "expertise": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Areas of expertise and skills"
+        },
+        "interests": {
+          "type": "array", 
+          "items": {"type": "string"},
+          "description": "Personal and professional interests"
+        },
+        "domainTags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Primary domains of work (e.g., Regenerative Agriculture, Climate Adaptation)"
+        },
+        "methodTags": {
+          "type": "array",
+          "items": {"type": "string"}, 
+          "description": "Methodological approaches (e.g., Permaculture, Doughnut Economics)"
+        },
+        "currentRole": {
+          "type": "string",
+          "description": "Current professional title or role"
+        },
+        "organization": {
+          "type": "string",
+          "description": "Current primary organization or affiliation"
+        }
+      },
+      "relationships": {
+        "collaboratesWith": {
+          "target": "RegenerativePerson",
+          "description": "People they collaborate with"
+        },
+        "mentors": {
+          "target": "RegenerativePerson",
+          "description": "People who mentor this person"
+        },
+        "mentees": {
+          "target": "RegenerativePerson",
+          "description": "People this person mentors"
+        },
+        "memberOf": {
+          "target": "Organization",
+          "description": "Organizations this person is a member of"
+        },
+        "worksFor": {
+          "target": "Organization",
+          "description": "Organization they work for"
+        },
+        "founder": {
+          "target": "Organization",
+          "description": "Organizations founded by this person"
+        }
+      }
+    },
+    "Organization": {
+      "@type": "Class",
+      "description": "A group or institution, e.g., a workplace, club, or community",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Name of the organization"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the organization"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "Organization website"
+        },
+        "location": {
+          "type": "string",
+          "description": "Organization location"
+        },
+        "founded": {
+          "type": "string",
+          "format": "date",
+          "description": "Date founded"
+        },
+        "organizationType": {
+          "type": "string",
+          "description": "Type of organization (e.g., nonprofit, company, community group)"
+        }
+      },
+      "relationships": {
+        "hasEmployee": {
+          "target": "RegenerativePerson",
+          "description": "People who work for this organization"
+        },
+        "hasMember": {
+          "target": "RegenerativePerson", 
+          "description": "People who are members of this organization"
+        },
+        "collaboratesWith": {
+          "target": "Organization",
+          "description": "Other organizations they collaborate with"
+        }
+      }
+    },
+    "Note": {
+      "@type": "Class",
+      "description": "A piece of written information or observation",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Title of the note"
+        },
+        "content": {
+          "type": "string",
+          "description": "Content of the note"
+        },
+        "dateCreated": {
+          "type": "string",
+          "format": "datetime",
+          "description": "When the note was created"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Tags associated with the note"
+        }
+      }
+    },
+    "Meeting": {
+      "@type": "Class",
+      "description": "A scheduled gathering for discussion or collaboration",
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Name or title of the meeting"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the meeting"
+        },
+        "startDate": {
+          "type": "string",
+          "format": "datetime",
+          "description": "Start date and time"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "datetime", 
+          "description": "End date and time"
+        },
+        "location": {
+          "type": "string",
+          "description": "Meeting location"
         }
       },
       "relationships": {
         "attendee": {
-          "target": "Person",
-          "description": "A person attending a meeting."
+          "target": "RegenerativePerson",
+          "description": "People attending the meeting"
         }
       }
     },
     "ActionItem": {
       "@type": "Class",
-      "description": "A specific task or step to be completed.",
+      "description": "A specific task or step to be completed",
       "properties": {
         "name": {
           "type": "string",
-          "required": false,
-          "description": "The name or title of an entity."
+          "required": true,
+          "description": "Name of the action item"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what needs to be done"
         },
         "dueDate": {
           "type": "string",
-          "description": "The due date for an action item.",
-          "required": false,
-          "format": "date"
+          "format": "date",
+          "description": "Due date for completion"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status",
+          "enum": ["todo", "in-progress", "completed", "cancelled"]
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority level",
+          "enum": ["low", "medium", "high", "urgent"]
         }
       },
       "relationships": {
         "assignedTo": {
-          "target": "Person",
-          "description": "The person assigned to an action item."
+          "target": "RegenerativePerson",
+          "description": "Person assigned to complete this action item"
         }
       }
     }

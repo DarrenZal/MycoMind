@@ -1,0 +1,21 @@
+# MycoMind: Personal Knowledge Management System
+
+this is a hyphal tip
+
+I've been working on this really exciting project called MycoMind - it's basically my attempt to build the personal knowledge management system I've always wanted. The whole idea started when I got frustrated with existing tools like Obsidian and Roam Research. Don't get me wrong, they're great, but I needed something that could really understand the semantic relationships in my notes and help me discover connections I might have missed.
+
+The core concept is to use AI and knowledge graphs to create a living, breathing representation of everything I know and learn. Instead of just having a bunch of disconnected notes, MycoMind extracts entities, relationships, and concepts automatically, then builds a proper knowledge graph that I can query and explore.
+
+I'm collaborating with Shawn on this project, which has been amazing. Shawn is this brilliant developer I met at a conference on regenerative systems last year. He's got this incredible background in semantic web technologies and has been working on similar problems in the context of bioregional mapping and community resilience. Shawn actually runs a small consultancy focused on helping communities build their own knowledge commons using open source tools. He's based in Portland and has been involved with the Transition Towns movement for years.
+
+What's really cool about working with Shawn is that he brings this whole perspective on how personal knowledge management connects to collective intelligence and community resilience. He's always talking about how individual knowledge graphs could eventually network together to create these larger webs of understanding that help communities make better decisions about their local ecosystems and economies.
+
+The technical architecture we're building is pretty sophisticated. We're using JSON-LD for the knowledge representation, with custom schemas that extend existing ontologies like Schema.org and the Murmurations network schema. Shawn insisted we make it compatible with the regenerative economy mapping work he's been doing, so we're using the RegenerativePerson schema for modeling people in our system.
+
+The extraction pipeline uses large language models to process unstructured text and identify entities, relationships, and concepts. Then we convert everything to RDF and load it into a graph database where we can run complex SPARQL queries. The whole thing is designed to work with markdown files so I can keep using my existing note-taking workflow.
+
+One of the most interesting challenges has been entity linking - figuring out when "Shawn" mentioned in one note is the same person as "Shawn Miller" mentioned in another. We're experimenting with different approaches, from simple string matching to more sophisticated embedding-based similarity measures.
+
+The project is still in early stages, but we've got a working prototype that can extract entities from my notes and build a basic knowledge graph. Next steps are to improve the entity linking, add better visualization tools, and start working on the natural language query interface that will let me ask questions like "what are all the projects I'm working on with people from Portland?" or "show me everything related to regenerative agriculture in my notes."
+
+I'm really excited about where this is heading. The vision is to create something that doesn't just store information, but actually helps me think better and discover new insights by surfacing unexpected connections in my knowledge base.
