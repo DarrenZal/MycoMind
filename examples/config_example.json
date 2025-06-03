@@ -12,7 +12,7 @@
     "retry_delay": 1.0
   },
   "obsidian": {
-    "vault_path": "/path/to/your/obsidian/vault",
+    "vault_path": "./demo_vault",
     "notes_folder": "extracted_knowledge",
     "create_folders": true,
     "folder_structure": "by_type",

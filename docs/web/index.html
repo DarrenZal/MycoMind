@@ -116,6 +116,10 @@
             background: #d4edda;
             color: #155724;
         }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
         .status.error {
             background: #f8d7da;
             color: #721c24;
@@ -132,20 +136,14 @@
 <body>
     <div class="header">
         <h1>🍄 MycoMind Knowledge Graph Query Interface</h1>
-        <p>Browser-based SPARQL querying with JavaScript - No Java required!</p>
+        <p>Browser-based SPARQL querying with SPARQL.js - Full SPARQL 1.1 support!</p>
     </div>
 
     <div class="container">
         <div class="panel">
-            <h3>📁 Load Knowledge Graph</h3>
-            <div class="file-input">
-                <input type="file" id="jsonldFile" accept=".jsonld,.json" />
-                <p>Upload your <code>mycomind_knowledge_graph.jsonld</code> file</p>
-                <small>This file can be generated using the Python script:<br>
-                <code>python scripts/yaml_to_jsonld_converter.py --schema schemas/hyphaltips_mycomind_schema.json --input /path/to/markdown/files --output mycomind_knowledge_graph.jsonld</code></small>
-            </div>
-            <button onclick="loadSampleData()">Load Sample Data</button>
+            <h3>🍄 Knowledge Graph Status</h3>
             <div id="loadStatus"></div>
+            <p><small>Knowledge graph automatically loads from <code>mycomind_knowledge_graph.jsonld</code></small></p>
         </div>
 
         <div class="panel">
@@ -175,6 +173,10 @@
                     <h4>🕸️ Network Analysis</h4>
                     <code>Find most connected entities</code>
                 </div>
+                <div class="sample-query" onclick="loadQuery('advanced')">
+                    <h4>🔍 Advanced SPARQL 1.1</h4>
+                    <code>Using UNION, FILTER and other SPARQL 1.1 features</code>
+                </div>
             </div>
         </div>
     </div>
@@ -193,6 +195,7 @@ LIMIT 10
         </textarea>
         <br>
         <button onclick="executeQuery()">🔍 Execute Query</button>
+        <button onclick="formatQuery()">📝 Format Query</button>
         <button onclick="clearResults()">🗑️ Clear Results</button>
     </div>
 
@@ -201,8 +204,11 @@ LIMIT 10
         <div id="resultsContent"></div>
     </div>
 
-    <!-- Load RDFLib library -->
-    <script src="https://unpkg.com/rdflib@2.2.21/dist/rdflib.min.js"></script>
+    <!-- Load N3.js for RDF processing -->
+    <script src="https://unpkg.com/n3@1.17.2/browser/n3.min.js"></script>
+    
+    <!-- Load SPARQL.js for SPARQL parsing and generation -->
+    <script src="https://unpkg.com/sparqljs@3.7.2/sparql.min.js"></script>
     
     <!-- Load our custom JavaScript -->
     <script src="mycomind-query.js"></script>

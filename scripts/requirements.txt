@@ -27,5 +27,9 @@ structlog>=22.3.0
 
 # Optional: for advanced features
 rdflib>=7.0.0 # For RDF/JSON-LD parsing
-# neo4j>=5.0.0  # Uncomment for knowledge graph features
-# networkx>=3.0  # Uncomment for graph analysis
+neo4j>=5.0.0  # For Neo4j graph database integration
+networkx>=3.0  # For graph analysis
+
+# Graph database dependencies
+SPARQLWrapper>=2.0.0  # For Fuseki SPARQL endpoint
+py2neo>=2021.2.3  # Alternative Neo4j client with higher-level API

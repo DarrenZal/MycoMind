@@ -1,31 +1,56 @@
-// Initialize rdflib store
-const store = $rdf.graph();
-const fetcher = new $rdf.Fetcher(store);
-const updater = new $rdf.UpdateManager(store);
+// Initialize N3 store and SPARQL.js support
+let store;
+let loadedData = null;
+let sparqlParser;
+let sparqlGenerator;
+let prefixes = {
+    rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+    xsd: 'http://www.w3.org/2001/XMLSchema#',
+    myco: 'http://mycomind.org/kg/ontology/',
+    entity: 'http://mycomind.org/kg/entity/'
+};
 
-// Define namespaces
-const MYCO = $rdf.Namespace("http://mycomind.org/kg/ontology/");
-const RDF = $rdf.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-const RDFS = $rdf.Namespace("http://www.w3.org/2000/01/rdf-schema#");
-
-// Initialize the store
+// Initialize the store and SPARQL.js
 async function initStore() {
     try {
-        console.log('RDFLib store initialized');
-        showStatus('info', 'Ready to load knowledge graph. Please upload a JSON-LD file or click "Load Sample Data"');
+        console.log('Initializing N3 store and SPARQL.js...');
+        
+        // Check if N3 is available
+        if (typeof N3 === 'undefined') {
+            throw new Error('N3 library not loaded');
+        }
+        
+        // Check if SPARQL.js is available
+        if (typeof sparqljs === 'undefined') {
+            throw new Error('SPARQL.js library not loaded');
+        }
+        
+        console.log('N3 available:', Object.keys(N3));
+        console.log('SPARQL.js available');
+        
+        // Initialize N3 store
+        store = new N3.Store();
+        
+        // Initialize SPARQL.js parser and generator with prefixes
+        sparqlParser = new sparqljs.Parser({ prefixes: prefixes });
+        sparqlGenerator = new sparqlGenerator({ prefixes: prefixes });
+        
+        console.log('N3 store and SPARQL.js initialized successfully');
+        showStatus('info', 'RDF store ready. Loading knowledge graph...');
     } catch (error) {
-        console.error('Failed to initialize RDF store:', error);
-        showStatus('error', 'Failed to initialize RDF store');
+        console.error('Failed to initialize:', error);
+        showStatus('error', 'Failed to initialize: ' + error.message);
     }
 }
 
-// Load the knowledge graph file
+// Load the knowledge graph data
 async function loadLocalKnowledgeGraph() {
     try {
         showStatus('loading', 'Loading knowledge graph data...');
         
-        // Fetch the JSON-LD file
         try {
+            // Try to load the JSON-LD file using fetch
             const response = await fetch('mycomind_knowledge_graph.jsonld');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -34,207 +59,245 @@ async function loadLocalKnowledgeGraph() {
             const jsonldData = await response.json();
             console.log("Loaded JSON-LD data:", jsonldData);
             
+            // Store the data for reference
+            loadedData = jsonldData;
+            
             // Process the JSON-LD data
-            processJSONLD(jsonldData);
+            await processJSONLDToStore(jsonldData);
             
-            // Count entities
-            const entities = store.each(null, RDF('type'), null);
-            console.log("Loaded entities:", entities);
+            // Count statements in the store
+            const statementCount = store.size;
+            console.log(`Loaded ${statementCount} statements into N3 store`);
             
-            // Log all statements for debugging
-            console.log("Total statements:", store.statements.length);
-            
-            if (store.statements.length === 0) {
-                throw new Error("Failed to load any statements from the JSON-LD file");
-            }
-            
-            showStatus('success', `Loaded knowledge graph with ${entities.length} entities`);
+            showStatus('success', `Loaded knowledge graph with ${statementCount} statements`);
             return true;
         } catch (fetchError) {
             console.error('Error fetching JSON-LD file:', fetchError);
-            showStatus('error', 'Error loading knowledge graph file. Please upload a file manually.');
-            return false;
+            console.log('Loading sample data instead...');
+            
+            // Create sample data directly in the store
+            createSampleData();
+            
+            // Count statements in the store
+            const statementCount = store.size;
+            console.log(`Created ${statementCount} statements from sample data in N3 store`);
+            
+            showStatus('success', `Loaded sample knowledge graph with ${statementCount} statements`);
+            return true;
         }
     } catch (error) {
         console.error('Error loading knowledge graph:', error);
-        showStatus('error', 'Error loading knowledge graph. Please upload a file manually.');
+        showStatus('error', 'Error loading knowledge graph: ' + error.message);
         return false;
     }
 }
 
-// Process JSON-LD data and add to the store
-function processJSONLD(jsonldData) {
+// Create sample data directly in the N3 store
+function createSampleData() {
+    console.log("Creating sample data directly in the N3 store...");
+    
+    const { namedNode, literal } = N3.DataFactory;
+    
+    // Define common URIs
+    const RDF_TYPE = namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
+    const MYCO_NS = 'http://mycomind.org/kg/ontology/';
+    const ENTITY_NS = 'http://mycomind.org/kg/entity/';
+    
+    // Define entity types
+    const PERSON_TYPE = namedNode(MYCO_NS + 'RegenerativePerson');
+    const PROJECT_TYPE = namedNode(MYCO_NS + 'Project');
+    const HYPHALTIP_TYPE = namedNode(MYCO_NS + 'HyphalTip');
+    
+    // Define predicates
+    const NAME_PRED = namedNode(MYCO_NS + 'name');
+    const LOCATION_PRED = namedNode(MYCO_NS + 'location');
+    const ROLE_PRED = namedNode(MYCO_NS + 'currentRole');
+    const STATUS_PRED = namedNode(MYCO_NS + 'status');
+    const ACTIVITY_STATUS_PRED = namedNode(MYCO_NS + 'activityStatus');
+    const COLLABORATOR_PRED = namedNode(MYCO_NS + 'collaborator');
+    
+    // Create person: John
+    const john = namedNode(ENTITY_NS + 'person/john');
+    store.addQuad(john, RDF_TYPE, PERSON_TYPE);
+    store.addQuad(john, NAME_PRED, literal('John Smith'));
+    store.addQuad(john, LOCATION_PRED, literal('Portland, OR'));
+    store.addQuad(john, ROLE_PRED, literal('Mycologist'));
+    
+    // Create person: Jane
+    const jane = namedNode(ENTITY_NS + 'person/jane');
+    store.addQuad(jane, RDF_TYPE, PERSON_TYPE);
+    store.addQuad(jane, NAME_PRED, literal('Jane Doe'));
+    store.addQuad(jane, LOCATION_PRED, literal('Seattle, WA'));
+    store.addQuad(jane, ROLE_PRED, literal('Researcher'));
+    
+    // Create project: MycoMind
+    const mycomind = namedNode(ENTITY_NS + 'project/mycomind');
+    store.addQuad(mycomind, RDF_TYPE, PROJECT_TYPE);
+    store.addQuad(mycomind, NAME_PRED, literal('MycoMind Project'));
+    store.addQuad(mycomind, STATUS_PRED, literal('Active'));
+    store.addQuad(mycomind, COLLABORATOR_PRED, john);
+    
+    // Create hyphal tip: Knowledge Graph
+    const kg = namedNode(ENTITY_NS + 'hyphaltip/knowledge_graph');
+    store.addQuad(kg, RDF_TYPE, HYPHALTIP_TYPE);
+    store.addQuad(kg, NAME_PRED, literal('Knowledge Graph Implementation'));
+    store.addQuad(kg, ACTIVITY_STATUS_PRED, literal('In Progress'));
+    store.addQuad(kg, COLLABORATOR_PRED, jane);
+    
+    console.log("Sample data created successfully");
+}
+
+// Convert JSON-LD to RDF quads and add to N3 store
+async function processJSONLDToStore(jsonldData) {
     try {
-        console.log("Processing JSON-LD data...");
+        console.log("Converting JSON-LD to N3 store...");
         
-        // Clear the store first to avoid duplicates
-        store.removeStatements(store.statements);
-        
-        // Try to parse the JSON-LD into the RDF store using rdflib
-        try {
-            $rdf.parse(JSON.stringify(jsonldData), store, "http://mycomind.org/kg/", "application/ld+json");
-            console.log("Successfully parsed JSON-LD using rdflib parser");
-        } catch (parseError) {
-            console.log("RDFLib parsing failed, processing manually:", parseError);
-        }
-        
-        // If parsing didn't work or added no statements, add triples manually
-        if (store.statements.length === 0 && jsonldData["@graph"]) {
-            console.log("Adding triples manually from @graph...");
-            
-            // Process each entity in the @graph array
+        // Process each entity in the @graph
+        if (jsonldData["@graph"]) {
             jsonldData["@graph"].forEach(entity => {
-                const subject = $rdf.sym(entity["@id"]);
-                
-                // Add type
-                if (entity["@type"]) {
-                    store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                try {
+                    const subject = N3.DataFactory.namedNode(entity["@id"]);
+                    
+                    // Add type triple
+                    if (entity["@type"]) {
+                        store.addQuad(
+                            subject,
+                            N3.DataFactory.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                            N3.DataFactory.namedNode(entity["@type"])
+                        );
+                    }
+                    
+                    // Add all other properties
+                    Object.entries(entity).forEach(([predicate, value]) => {
+                        // Skip @id and @type as they're handled separately
+                        if (predicate === "@id" || predicate === "@type") return;
+                        
+                        const predicateNode = N3.DataFactory.namedNode(predicate);
+                        
+                        // Handle array values
+                        if (Array.isArray(value)) {
+                            value.forEach(v => {
+                                try {
+                                    if (typeof v === 'object' && v["@id"]) {
+                                        // Reference to another entity
+                                        store.addQuad(subject, predicateNode, N3.DataFactory.namedNode(v["@id"]));
+                                    } else {
+                                        // Literal value
+                                        store.addQuad(subject, predicateNode, N3.DataFactory.literal(String(v)));
+                                    }
+                                } catch (innerError) {
+                                    console.warn(`Error processing array value for ${predicate}:`, innerError);
+                                }
+                            });
+                        } 
+                        // Handle object values (references to other entities)
+                        else if (typeof value === 'object' && value["@id"]) {
+                            store.addQuad(subject, predicateNode, N3.DataFactory.namedNode(value["@id"]));
+                        }
+                        // Handle literal values
+                        else {
+                            store.addQuad(subject, predicateNode, N3.DataFactory.literal(String(value)));
+                        }
+                    });
+                } catch (entityError) {
+                    console.warn(`Error processing entity ${entity["@id"] || "unknown"}:`, entityError);
+                    // Continue processing other entities
                 }
+            });
+        } else {
+            console.warn("No @graph found in JSON-LD data, trying to process as flat JSON-LD");
+            
+            // Try to process as flat JSON-LD (not in @graph format)
+            // This is a fallback for simpler JSON-LD formats
+            try {
+                // Process context to get prefixes
+                const context = jsonldData["@context"] || {};
                 
-                // Add all other properties
-                Object.entries(entity).forEach(([key, value]) => {
-                    // Skip @id and @type as they're handled separately
-                    if (key === "@id" || key === "@type") return;
+                // Process each top-level entity that has an @id
+                Object.entries(jsonldData).forEach(([key, value]) => {
+                    if (key === "@context") return; // Skip context
                     
-                    const predNode = $rdf.sym(key);
-                    
-                    // Handle array values
-                    if (Array.isArray(value)) {
-                        value.forEach(v => {
-                            if (typeof v === 'object' && v["@id"]) {
+                    if (key === "@id") {
+                        // This is a single entity at the root
+                        const subject = N3.DataFactory.namedNode(value);
+                        
+                        // Add type if present
+                        if (jsonldData["@type"]) {
+                            store.addQuad(
+                                subject,
+                                N3.DataFactory.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                                N3.DataFactory.namedNode(jsonldData["@type"])
+                            );
+                        }
+                        
+                        // Add all other properties
+                        Object.entries(jsonldData).forEach(([predicate, propValue]) => {
+                            // Skip @id and @type as they're handled separately
+                            if (predicate === "@id" || predicate === "@type" || predicate === "@context") return;
+                            
+                            const predicateNode = N3.DataFactory.namedNode(predicate);
+                            
+                            if (typeof propValue === 'object' && propValue["@id"]) {
                                 // Reference to another entity
-                                store.add(subject, predNode, $rdf.sym(v["@id"]));
-                            } else {
+                                store.addQuad(subject, predicateNode, N3.DataFactory.namedNode(propValue["@id"]));
+                            } else if (!Array.isArray(propValue) && typeof propValue !== 'object') {
                                 // Literal value
-                                store.add(subject, predNode, $rdf.lit(v));
+                                store.addQuad(subject, predicateNode, N3.DataFactory.literal(String(propValue)));
                             }
                         });
-                    } 
-                    // Handle object values (references to other entities)
-                    else if (typeof value === 'object' && value["@id"]) {
-                        store.add(subject, predNode, $rdf.sym(value["@id"]));
-                    }
-                    // Handle literal values
-                    else {
-                        store.add(subject, predNode, $rdf.lit(value));
                     }
                 });
-            });
-            
-            console.log("Added triples manually");
+            } catch (flatError) {
+                console.warn("Error processing flat JSON-LD:", flatError);
+            }
         }
         
-        console.log(`Total statements in store: ${store.statements.length}`);
+        console.log(`Added ${store.size} quads to N3 store`);
+        
+        if (store.size === 0) {
+            throw new Error("No quads were added to the store. Check the JSON-LD format.");
+        }
+        
+        // Debug: Print some sample quads
+        console.log("Sample quads in store:");
+        let count = 0;
+        for (const quad of store) {
+            if (count < 10) {
+                console.log(`${quad.subject.value} ${quad.predicate.value} ${quad.object.value}`);
+                count++;
+            } else {
+                break;
+            }
+        }
+        
     } catch (error) {
         console.error('Error processing JSON-LD:', error);
+        throw error;
     }
 }
 
-// Load sample data from the local file or GitHub repository
-async function loadSampleData() {
-    try {
-        showStatus('loading', 'Loading sample data...');
-        
-        // Sample data as a fallback if both local and GitHub fetches fail
-        const sampleData = {
-            "@context": {
-                "@vocab": "http://mycomind.org/kg/ontology/",
-                "@base": "http://mycomind.org/kg/resource/",
-                "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-                "rdfs": "http://www.w3.org/2000/01/rdf-schema#"
-            },
-            "@graph": [
-                {
-                    "@id": "http://mycomind.org/kg/resource/RegenerativePerson/Shawn",
-                    "@type": "http://mycomind.org/kg/ontology/RegenerativePerson",
-                    "http://mycomind.org/kg/ontology/name": "Shawn",
-                    "http://mycomind.org/kg/ontology/location": "Portland",
-                    "http://mycomind.org/kg/ontology/currentRole": "Developer",
-                    "http://mycomind.org/kg/ontology/bio": "A brilliant developer with a background in semantic web technologies"
-                },
-                {
-                    "@id": "http://mycomind.org/kg/resource/HyphalTip/MycoMind",
-                    "@type": "http://mycomind.org/kg/ontology/HyphalTip",
-                    "http://mycomind.org/kg/ontology/name": "MycoMind: Personal Knowledge Management System",
-                    "http://mycomind.org/kg/ontology/activityStatus": "alive",
-                    "http://mycomind.org/kg/ontology/collaborator": [
-                        {"@id": "http://mycomind.org/kg/resource/RegenerativePerson/Shawn"}
-                    ]
-                },
-                {
-                    "@id": "http://mycomind.org/kg/resource/Project/MycoMind",
-                    "@type": "http://mycomind.org/kg/ontology/Project",
-                    "http://mycomind.org/kg/ontology/name": "MycoMind",
-                    "http://mycomind.org/kg/ontology/status": "in-progress",
-                    "http://mycomind.org/kg/ontology/description": "A project to build a personal knowledge management system"
-                }
-            ]
-        };
-        
-        let jsonldData;
-        let dataSource = "embedded sample data";
-        
-        // Try to fetch the JSON-LD file from the local file system first
-        try {
-            const response = await fetch('mycomind_knowledge_graph.jsonld');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            jsonldData = await response.json();
-            dataSource = "local file";
-            console.log("Loaded JSON-LD data from local file");
-        } catch (localError) {
-            console.log("Could not load local file, trying GitHub repository...");
-            
-            // If local file is not available, try to fetch from GitHub
-            try {
-                const githubUrl = 'https://raw.githubusercontent.com/DarrenZal/MycoMind/master/docs/web/mycomind_knowledge_graph.jsonld';
-                const response = await fetch(githubUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                jsonldData = await response.json();
-                dataSource = "GitHub repository";
-                console.log("Loaded JSON-LD data from GitHub");
-            } catch (githubError) {
-                console.log("Could not load from GitHub, using embedded sample data");
-                jsonldData = sampleData;
-            }
-        }
-        
-        // Process the JSON-LD data
-        processJSONLD(jsonldData);
-        
-        // Count entities
-        const entities = store.each(null, RDF('type'), null);
-        console.log("Entities:", entities);
-        showStatus('success', `Loaded sample data from ${dataSource} with ${entities.length} entities. Try the sample queries!`);
-    } catch (error) {
-        console.error('Error loading sample data:', error);
-        showStatus('error', 'Error loading sample data: ' + error.message);
-    }
-}
-
-// Execute SPARQL query using rdflib
+// Execute SPARQL query
 async function executeQuery() {
-    if (store.statements.length === 0) {
+    if (!store || store.size === 0) {
         showStatus('error', 'Please load a knowledge graph first');
         return;
     }
 
-    const query = document.getElementById('queryEditor').value;
-    if (!query.trim()) {
+    const queryText = document.getElementById('queryEditor').value;
+    if (!queryText.trim()) {
         showStatus('error', 'Please enter a SPARQL query');
         return;
     }
 
     try {
-        showStatus('loading', 'Executing query...');
+        showStatus('loading', 'Executing SPARQL query...');
         
-        // Execute SPARQL query using rdflib
-        const results = await executeSPARQLQuery(query);
+        // Parse the SPARQL query using SPARQL.js
+        const parsedQuery = sparqlParser.parse(queryText);
+        console.log("Parsed query:", parsedQuery);
+        
+        // Execute the parsed SPARQL query
+        const results = await executeSPARQLQuery(parsedQuery);
         displayResults(results);
         showStatus('success', `Query executed successfully! Found ${results.length} results.`);
     } catch (error) {
@@ -243,233 +306,357 @@ async function executeQuery() {
     }
 }
 
-// Execute SPARQL query using rdflib
-async function executeSPARQLQuery(sparqlQuery) {
-    return new Promise((resolve, reject) => {
-        try {
-            console.log("Executing query:", sparqlQuery);
-            console.log("Store has statements:", store.statements.length);
-            
-            // Debug: Print all statements in the store
-            console.log("All statements in store:");
-            store.statements.forEach((stmt, index) => {
-                console.log(`Statement ${index}:`, 
-                    stmt.subject.value, 
-                    stmt.predicate.value, 
-                    stmt.object.termType === 'Literal' ? stmt.object.value : stmt.object.value);
-            });
-            
-            // Simple query execution for demo purposes
-            // This avoids CORS issues with external fetching
-            let results = [];
-            
-            // Parse the query to determine what we're looking for
-            if (sparqlQuery.includes('rdf:type myco:RegenerativePerson')) {
-                console.log("Looking for RegenerativePerson entities");
-                
-                // Find all RegenerativePerson entities - use Set to ensure uniqueness
-                const personURIs = new Set();
-                store.statements.forEach(stmt => {
-                    if (stmt.predicate.value === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' && 
-                        stmt.object.value === 'http://mycomind.org/kg/ontology/RegenerativePerson') {
-                        personURIs.add(stmt.subject.value);
-                    }
-                });
-                
-                const persons = Array.from(personURIs).map(uri => $rdf.sym(uri));
-                console.log("Found unique persons:", persons);
-                
-                // Debug: Print each person's properties
-                persons.forEach((person, idx) => {
-                    console.log(`Person ${idx}:`, person.value);
-                    const stmts = store.statementsMatching(person);
-                    stmts.forEach(s => {
-                        console.log(`  - ${s.predicate.value}: ${s.object.termType === 'Literal' ? s.object.value : s.object.value}`);
-                    });
-                });
-                
-                // Process each unique person
-                persons.forEach(person => {
-                    const name = store.any(person, MYCO('name'), null);
-                    const location = store.any(person, MYCO('location'), null);
-                    const role = store.any(person, MYCO('currentRole'), null);
-                    
-                    results.push({
-                        person: person.value,
-                        person_full: person.value,
-                        name: name ? name.value : '',
-                        location: location ? location.value : '',
-                        role: role ? role.value : ''
-                    });
-                });
-                
-                console.log("Query results:", results);
-            } 
-            else if (sparqlQuery.includes('rdf:type myco:HyphalTip')) {
-                console.log("Looking for HyphalTip entities");
-                
-                // Find all HyphalTip entities
-                const tips = store.each(null, RDF('type'), MYCO('HyphalTip'));
-                console.log("Found tips:", tips);
-                
-                tips.forEach(tip => {
-                    const name = store.any(tip, MYCO('name'), null);
-                    const status = store.any(tip, MYCO('activityStatus'), null);
-                    
-                    results.push({
-                        tip: tip.value,
-                        tip_full: tip.value,
-                        name: name ? name.value : '',
-                        status: status ? status.value : ''
-                    });
-                });
-            }
-            else if (sparqlQuery.includes('rdf:type myco:Project')) {
-                console.log("Looking for Project entities");
-                
-                // Find all Project entities
-                const projects = store.each(null, RDF('type'), MYCO('Project'));
-                console.log("Found projects:", projects);
-                
-                projects.forEach(project => {
-                    const name = store.any(project, MYCO('name'), null);
-                    const status = store.any(project, MYCO('status'), null);
-                    
-                    results.push({
-                        project: project.value,
-                        project_full: project.value,
-                        name: name ? name.value : '',
-                        status: status ? status.value : ''
-                    });
-                });
-            }
-            else if (sparqlQuery.includes('myco:collaborator')) {
-                console.log("Looking for collaborations");
-                
-                // Find all entities with collaborators
-                store.each(null, MYCO('collaborator'), null).forEach(entity => {
-                    const name = store.any(entity, MYCO('name'), null);
-                    const collaborators = store.each(entity, MYCO('collaborator'), null);
-                    
-                    collaborators.forEach(collaborator => {
-                        results.push({
-                            entity1: entity.value,
-                            entity1_full: entity.value,
-                            name1: name ? name.value : '',
-                            entity2: collaborator.value,
-                            entity2_full: collaborator.value
-                        });
-                    });
-                });
-            }
-            else if (sparqlQuery.includes('rdf:type myco:Organization')) {
-                console.log("Looking for Organization entities");
-                
-                // Find all Organization entities
-                const organizations = store.each(null, RDF('type'), MYCO('Organization'));
-                console.log("Found organizations:", organizations);
-                
-                organizations.forEach(org => {
-                    const name = store.any(org, MYCO('name'), null);
-                    
-                    results.push({
-                        org: org.value,
-                        org_full: org.value,
-                        name: name ? name.value : ''
-                    });
-                });
-            }
-            else if (sparqlQuery.includes('myco:location')) {
-                console.log("Looking for entities with locations");
-                
-                // Find all entities with locations
-                store.each(null, MYCO('location'), null).forEach(entity => {
-                    const name = store.any(entity, MYCO('name'), null);
-                    const location = store.any(entity, MYCO('location'), null);
-                    
-                    results.push({
-                        entity: entity.value,
-                        entity_full: entity.value,
-                        name: name ? name.value : '',
-                        location: location ? location.value : ''
-                    });
-                });
-            }
-            else {
-                console.log("Generic query for all entities with names and types");
-                
-                // Generic query - find all entities with names
-                store.each(null, MYCO('name'), null).forEach(entity => {
-                    const name = store.any(entity, MYCO('name'), null);
-                    const types = store.each(entity, RDF('type'), null);
-                    
-                    if (types.length > 0) {
-                        const type = types[0];
-                        const typeStr = type.value;
-                        const typeName = typeStr.substring(typeStr.lastIndexOf('/') + 1);
-                        
-                        results.push({
-                            entity: entity.value,
-                            entity_full: entity.value,
-                            name: name ? name.value : '',
-                            type: typeName,
-                            type_full: type.value
-                        });
-                    }
-                });
-            }
-            
-            console.log("Query results:", results);
-            resolve(results);
-        } catch (error) {
-            console.error("Query execution error:", error);
-            reject(error);
+// Execute a SPARQL query against the N3 store
+async function executeSPARQLQuery(parsedQuery) {
+    try {
+        console.log("Executing SPARQL query:", parsedQuery);
+        console.log("Store has", store.size, "quads");
+        
+        // Currently only supporting SELECT queries
+        if (parsedQuery.queryType !== 'SELECT') {
+            throw new Error(`Query type '${parsedQuery.queryType}' not supported yet. Only SELECT queries are supported.`);
         }
+        
+        // Process the WHERE clause
+        const results = processWhereClause(parsedQuery.where, parsedQuery.variables);
+        
+        // Apply any modifiers (LIMIT, OFFSET, ORDER BY)
+        const finalResults = applyModifiers(results, parsedQuery);
+        
+        console.log("Query results:", finalResults);
+        return finalResults;
+        
+    } catch (error) {
+        console.error("SPARQL query execution error:", error);
+        throw error;
+    }
+}
+
+// Process the WHERE clause of a SPARQL query
+function processWhereClause(whereClause, variables) {
+    // Initialize results with an empty binding
+    let bindings = [{}];
+    
+    // Process each element in the WHERE clause
+    for (const element of whereClause) {
+        switch (element.type) {
+            case 'bgp':
+                // Basic Graph Pattern
+                bindings = processBGP(element.triples, bindings);
+                break;
+                
+            case 'optional':
+                // OPTIONAL pattern
+                bindings = processOptional(element, bindings);
+                break;
+                
+            case 'filter':
+                // FILTER expression
+                bindings = processFilter(element, bindings);
+                break;
+                
+            case 'union':
+                // UNION pattern
+                bindings = processUnion(element, bindings);
+                break;
+                
+            default:
+                console.warn(`Unsupported pattern type: ${element.type}`);
+        }
+    }
+    
+    // Project the variables requested in the SELECT clause
+    return projectVariables(bindings, variables);
+}
+
+// Process a Basic Graph Pattern
+function processBGP(triples, bindings) {
+    let results = bindings;
+    
+    // Process each triple pattern
+    for (const triple of triples) {
+        results = processTriplePattern(triple, results);
+    }
+    
+    return results;
+}
+
+// Process a triple pattern against the N3 store with existing bindings
+function processTriplePattern(pattern, bindings) {
+    const newBindings = [];
+    
+    // For each existing binding
+    bindings.forEach(binding => {
+        // Create a quad pattern with bound variables replaced by their values
+        const subject = bindTerm(pattern.subject, binding);
+        const predicate = bindTerm(pattern.predicate, binding);
+        const object = bindTerm(pattern.object, binding);
+        
+        // Query the store with the bound pattern
+        const quads = store.getQuads(
+            subject.termType === 'Variable' ? null : subject,
+            predicate.termType === 'Variable' ? null : predicate,
+            object.termType === 'Variable' ? null : object,
+            null
+        );
+        
+        // For each matching quad, create a new binding
+        quads.forEach(quad => {
+            const newBinding = { ...binding };
+            
+            // Bind variables to the values in the quad
+            if (pattern.subject.termType === 'Variable') {
+                newBinding[pattern.subject.value] = quad.subject;
+            }
+            if (pattern.predicate.termType === 'Variable') {
+                newBinding[pattern.predicate.value] = quad.predicate;
+            }
+            if (pattern.object.termType === 'Variable') {
+                newBinding[pattern.object.value] = quad.object;
+            }
+            
+            newBindings.push(newBinding);
+        });
+    });
+    
+    return newBindings;
+}
+
+// Process an OPTIONAL pattern
+function processOptional(optionalPattern, bindings) {
+    // Make a copy of the current bindings
+    const originalBindings = [...bindings];
+    
+    // Try to match the optional pattern
+    const matchedBindings = processWhereClause(optionalPattern.patterns, bindings);
+    
+    // If no matches, return the original bindings
+    if (matchedBindings.length === 0) {
+        return originalBindings;
+    }
+    
+    // Otherwise, return the matched bindings
+    return matchedBindings;
+}
+
+// Process a FILTER expression
+function processFilter(filterPattern, bindings) {
+    // Filter the bindings based on the expression
+    return bindings.filter(binding => {
+        try {
+            return evaluateExpression(filterPattern.expression, binding);
+        } catch (error) {
+            console.warn(`Error evaluating filter: ${error.message}`);
+            return false;
+        }
+    });
+}
+
+// Process a UNION pattern
+function processUnion(unionPattern, bindings) {
+    // Process each pattern in the union
+    const results = [];
+    
+    for (const pattern of unionPattern.patterns) {
+        const patternResults = processWhereClause([pattern], bindings);
+        results.push(...patternResults);
+    }
+    
+    return results;
+}
+
+// Evaluate a SPARQL expression
+function evaluateExpression(expression, binding) {
+    switch (expression.type) {
+        case 'operation':
+            return evaluateOperation(expression, binding);
+            
+        case 'functionCall':
+            return evaluateFunction(expression, binding);
+            
+        case 'bgp':
+        case 'variable':
+            return evaluateTerm(expression, binding);
+            
+        default:
+            console.warn(`Unsupported expression type: ${expression.type}`);
+            return false;
+    }
+}
+
+// Evaluate a SPARQL operation
+function evaluateOperation(operation, binding) {
+    const operator = operation.operator;
+    const args = operation.args.map(arg => evaluateExpression(arg, binding));
+    
+    switch (operator) {
+        case '=':
+            return args[0] === args[1];
+        case '!=':
+            return args[0] !== args[1];
+        case '<':
+            return args[0] < args[1];
+        case '>':
+            return args[0] > args[1];
+        case '<=':
+            return args[0] <= args[1];
+        case '>=':
+            return args[0] >= args[1];
+        case '+':
+            return args[0] + args[1];
+        case '-':
+            return args[0] - args[1];
+        case '*':
+            return args[0] * args[1];
+        case '/':
+            return args[0] / args[1];
+        case '&&':
+        case 'and':
+            return args[0] && args[1];
+        case '||':
+        case 'or':
+            return args[0] || args[1];
+        case '!':
+        case 'not':
+            return !args[0];
+        default:
+            console.warn(`Unsupported operator: ${operator}`);
+            return false;
+    }
+}
+
+// Evaluate a SPARQL function call
+function evaluateFunction(functionCall, binding) {
+    const functionName = functionCall.function;
+    const args = functionCall.args.map(arg => evaluateExpression(arg, binding));
+    
+    switch (functionName) {
+        case 'str':
+            return args[0].toString();
+        case 'lang':
+            return args[0].language || '';
+        case 'datatype':
+            return args[0].datatype || '';
+        case 'bound':
+            return args[0] !== undefined;
+        case 'isIRI':
+        case 'isURI':
+            return args[0] && args[0].termType === 'NamedNode';
+        case 'isBlank':
+            return args[0] && args[0].termType === 'BlankNode';
+        case 'isLiteral':
+            return args[0] && args[0].termType === 'Literal';
+        case 'regex':
+            try {
+                const pattern = new RegExp(args[1], args[2] || '');
+                return pattern.test(args[0]);
+            } catch (e) {
+                console.warn(`Invalid regex: ${e.message}`);
+                return false;
+            }
+        case 'strstarts':
+            return args[0].startsWith(args[1]);
+        case 'strends':
+            return args[0].endsWith(args[1]);
+        case 'contains':
+            return args[0].includes(args[1]);
+        default:
+            console.warn(`Unsupported function: ${functionName}`);
+            return false;
+    }
+}
+
+// Evaluate a term in a SPARQL expression
+function evaluateTerm(term, binding) {
+    if (term.termType === 'Variable') {
+        return binding[term.value] || null;
+    }
+    return term.value;
+}
+
+// Apply query modifiers (LIMIT, OFFSET, ORDER BY)
+function applyModifiers(results, query) {
+    let modifiedResults = [...results];
+    
+    // Apply ORDER BY
+    if (query.order && query.order.length > 0) {
+        modifiedResults.sort((a, b) => {
+            for (const orderCondition of query.order) {
+                const variable = orderCondition.expression.value;
+                const aValue = a[variable] || '';
+                const bValue = b[variable] || '';
+                
+                if (aValue < bValue) return orderCondition.descending ? 1 : -1;
+                if (aValue > bValue) return orderCondition.descending ? -1 : 1;
+            }
+            return 0;
+        });
+    }
+    
+    // Apply OFFSET
+    if (query.offset) {
+        modifiedResults = modifiedResults.slice(query.offset);
+    }
+    
+    // Apply LIMIT
+    if (query.limit) {
+        modifiedResults = modifiedResults.slice(0, query.limit);
+    }
+    
+    return modifiedResults;
+}
+
+// Bind a term with values from the binding
+function bindTerm(term, binding) {
+    if (term.termType === 'Variable' && binding[term.value]) {
+        return binding[term.value];
+    }
+    return term;
+}
+
+// Project the variables requested in the SELECT clause
+function projectVariables(bindings, variables) {
+    // If SELECT *, return all variables
+    if (variables[0] && variables[0].value === '*') {
+        return bindings.map(binding => {
+            const result = {};
+            Object.entries(binding).forEach(([key, value]) => {
+                if (value) {
+                    const shortKey = key.startsWith('?') ? key.substring(1) : key;
+                    result[shortKey] = value.value;
+                    result[shortKey + '_full'] = value.value;
+                }
+            });
+            return result;
+        });
+    }
+    
+    // Otherwise, project only the requested variables
+    return bindings.map(binding => {
+        const result = {};
+        variables.forEach(variable => {
+            const varName = variable.value;
+            const shortName = varName.startsWith('?') ? varName.substring(1) : varName;
+            
+            if (binding[varName]) {
+                result[shortName] = binding[varName].value;
+                
+                // For entity URIs, also add a shortened version
+                if (binding[varName].termType === 'NamedNode') {
+                    const uri = binding[varName].value;
+                    result[shortName] = uri.substring(uri.lastIndexOf('/') + 1);
+                    result[shortName + '_full'] = uri;
+                }
+            } else {
+                result[shortName] = null;
+            }
+        });
+        return result;
     });
 }
 
 // Display entity details in a modal
 function showEntityDetails(uri) {
-    // Find the entity in the store
-    const entity = $rdf.sym(uri);
-    const entityExists = store.any(entity, null, null) || store.any(null, null, entity);
-    
-    if (!entityExists) {
-        alert(`Entity not found: ${uri}`);
-        return;
-    }
-    
-    // Get all properties for this entity
-    const properties = {};
-    
-    // Get all statements where this entity is the subject
-    store.statementsMatching(entity, null, null).forEach(statement => {
-        const predicate = statement.predicate.value;
-        const predicateName = predicate.substring(predicate.lastIndexOf('/') + 1);
-        const object = statement.object;
-        
-        if (!properties[predicateName]) {
-            properties[predicateName] = [];
-        }
-        
-        if (object.termType === 'NamedNode') {
-            // For URI references, use the last part of the URI
-            const objectValue = object.value;
-            const objectName = objectValue.substring(objectValue.lastIndexOf('/') + 1);
-            properties[predicateName].push({
-                value: objectName,
-                uri: objectValue,
-                isUri: true
-            });
-        } else {
-            // For literals, use the value directly
-            properties[predicateName].push({
-                value: object.value,
-                isUri: false
-            });
-        }
-    });
-    
     // Create a modal to display the entity details
     const modal = document.createElement('div');
     modal.style.position = 'fixed';
@@ -511,39 +698,47 @@ function showEntityDetails(uri) {
     uriParagraph.textContent = uri;
     modalContent.appendChild(uriParagraph);
     
-    // Add the entity properties
-    const propertiesHeading = document.createElement('h3');
-    propertiesHeading.textContent = 'Properties';
-    modalContent.appendChild(propertiesHeading);
+    // Get entity properties from the store
+    const entityNode = N3.DataFactory.namedNode(uri);
+    const quads = store.getQuads(entityNode, null, null);
     
-    const propertiesList = document.createElement('dl');
-    for (const [predicate, objects] of Object.entries(properties)) {
-        const dt = document.createElement('dt');
-        dt.textContent = predicate;
-        dt.style.fontWeight = 'bold';
-        dt.style.marginTop = '10px';
-        propertiesList.appendChild(dt);
+    if (quads.length > 0) {
+        const propertiesHeading = document.createElement('h3');
+        propertiesHeading.textContent = 'Properties';
+        modalContent.appendChild(propertiesHeading);
         
-        objects.forEach(object => {
+        const propertiesList = document.createElement('dl');
+        
+        quads.forEach(quad => {
+            const predicate = quad.predicate.value;
+            const predicateName = predicate.substring(predicate.lastIndexOf('/') + 1);
+            
+            const dt = document.createElement('dt');
+            dt.textContent = predicateName;
+            dt.style.fontWeight = 'bold';
+            dt.style.marginTop = '10px';
+            propertiesList.appendChild(dt);
+            
             const dd = document.createElement('dd');
-            if (object.isUri) {
+            if (quad.object.termType === 'NamedNode') {
                 const a = document.createElement('a');
-                a.textContent = object.value;
+                a.textContent = quad.object.value.substring(quad.object.value.lastIndexOf('/') + 1);
                 a.href = '#';
-                a.title = object.uri;
+                a.title = quad.object.value;
                 a.onclick = (e) => {
                     e.preventDefault();
                     document.body.removeChild(modal);
-                    showEntityDetails(object.uri);
+                    showEntityDetails(quad.object.value);
                 };
                 dd.appendChild(a);
             } else {
-                dd.textContent = object.value;
+                dd.textContent = quad.object.value;
             }
             propertiesList.appendChild(dd);
         });
+        
+        modalContent.appendChild(propertiesList);
     }
-    modalContent.appendChild(propertiesList);
     
     // Add the modal content to the modal
     modal.appendChild(modalContent);
@@ -618,9 +813,10 @@ SELECT ?org ?name WHERE {
 }`,
         collaborations: `PREFIX myco: <http://mycomind.org/kg/ontology/>
 
-SELECT ?entity1 ?name1 ?entity2 WHERE {
+SELECT ?entity1 ?name1 ?entity2 ?name2 WHERE {
     ?entity1 myco:name ?name1 ;
              myco:collaborator ?entity2 .
+    ?entity2 myco:name ?name2 .
 }`,
         locations: `PREFIX myco: <http://mycomind.org/kg/ontology/>
 
@@ -635,10 +831,53 @@ SELECT ?entity ?name ?type WHERE {
     ?entity myco:name ?name ;
             rdf:type ?type .
     FILTER(STRSTARTS(STR(?type), STR(myco:)))
-}`
+}`,
+        advanced: `PREFIX myco: <http://mycomind.org/kg/ontology/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?entity ?name ?type ?related ?relatedName WHERE {
+    ?entity myco:name ?name ;
+            rdf:type ?type .
+    {
+        ?entity myco:collaborator ?related .
+        ?related myco:name ?relatedName .
+    } UNION {
+        ?related myco:collaborator ?entity .
+        ?related myco:name ?relatedName .
+    }
+    FILTER(?entity != ?related)
+}
+LIMIT 10`
     };
     
     document.getElementById('queryEditor').value = queries[type] || '';
+}
+
+// Format a SPARQL query
+function formatQuery() {
+    const queryText = document.getElementById('queryEditor').value;
+    if (!queryText.trim()) {
+        return;
+    }
+    
+    try {
+        // Parse the query
+        const parsedQuery = sparqlParser.parse(queryText);
+        
+        // Generate a formatted query string
+        const formattedQuery = sparqlGenerator.stringify(parsedQuery);
+        
+        // Update the query editor
+        document.getElementById('queryEditor').value = formattedQuery;
+    } catch (error) {
+        console.error('Error formatting query:', error);
+        showStatus('error', 'Error formatting query: ' + error.message);
+    }
+}
+
+// Generate a SPARQL query string from a parsed query object
+function generateSPARQLQuery(parsedQuery) {
+    return sparqlGenerator.stringify(parsedQuery);
 }
 
 // Show status messages
@@ -664,36 +903,10 @@ function clearResults() {
 // Initialize on page load
 window.addEventListener('load', async () => {
     await initStore();
-    showStatus('info', 'Please upload a JSON-LD file or click "Load Sample Data"');
     
-    // Set up file input event listener
-    document.getElementById('jsonldFile').addEventListener('change', async function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            try {
-                showStatus('loading', 'Loading knowledge graph...');
-                const text = await file.text();
-                const jsonldData = JSON.parse(text);
-                
-                // Process the JSON-LD data
-                processJSONLD(jsonldData);
-                
-                // Count entities
-                const entities = store.each(null, RDF('type'), null);
-                console.log("Loaded entities:", entities);
-                
-                // Log all statements for debugging
-                console.log("Total statements:", store.statements.length);
-                
-                if (store.statements.length === 0) {
-                    throw new Error("Failed to load any statements from the JSON-LD file");
-                }
-                
-                showStatus('success', `Loaded knowledge graph with ${entities.length} entities`);
-            } catch (error) {
-                console.error('Error loading file:', error);
-                showStatus('error', 'Error loading file: ' + error.message);
-            }
-        }
-    });
+    // Automatically try to load the local knowledge graph
+    const loaded = await loadLocalKnowledgeGraph();
+    if (!loaded) {
+        showStatus('error', 'Could not load mycomind_knowledge_graph.jsonld from repository');
+    }
 });

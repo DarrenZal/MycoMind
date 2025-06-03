@@ -9,6 +9,7 @@ that extracts entities and creates YAML frontmatter.
 Usage:
     python yaml_to_jsonld_converter.py --schema schemas/example_schemas/personal_knowledge.json --input /path/to/markdown/files --output output.jsonld
     python yaml_to_jsonld_converter.py --schema schemas/example_schemas/personal_knowledge.json --file single_file.md --output output.jsonld
+    python yaml_to_jsonld_converter.py --schema schemas/example_schemas/personal_knowledge.json --input /path/to/markdown/files --output output.jsonld --web-app
 """
 
 import os
@@ -17,6 +18,7 @@ import yaml
 import json
 import argparse
 import logging
+import shutil
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
 from datetime import datetime
@@ -374,13 +376,14 @@ class YAMLToJSONLDConverter:
         
         return context
     
-    def export_jsonld(self, entities: List[Dict[str, Any]], output_path: str) -> bool:
+    def export_jsonld(self, entities: List[Dict[str, Any]], output_path: str, web_app: bool = False) -> bool:
         """
         Export entities to JSON-LD file.
         
         Args:
             entities: List of JSON-LD entities
             output_path: Output file path
+            web_app: If True, also copy the output to the web app directory
             
         Returns:
             True if successful, False otherwise
@@ -404,6 +407,18 @@ class YAMLToJSONLDConverter:
             logger.info(f"JSON-LD exported to {output_path}")
             logger.info(f"Total entities: {len(entities)}")
             
+            # If web_app is True, also copy the file to the web app directory
+            if web_app:
+                web_app_path = os.path.join('docs', 'web', 'mycomind_knowledge_graph.jsonld')
+                
+                # Create web app directory if needed
+                web_app_dir = os.path.dirname(web_app_path)
+                os.makedirs(web_app_dir, exist_ok=True)
+                
+                # Copy the file
+                shutil.copy2(output_path, web_app_path)
+                logger.info(f"JSON-LD also copied to web app: {web_app_path}")
+            
             return True
             
         except Exception as e:
@@ -420,6 +435,8 @@ def main():
     parser.add_argument('--output', '-o', required=True, help='Output JSON-LD file path')
     parser.add_argument('--base-iri', default='http://mycomind.org/kg/', help='Base IRI for resources')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
+    parser.add_argument('--web-app', '-w', action='store_true', 
+                        help='Also save the output to the web app directory (docs/web/mycomind_knowledge_graph.jsonld)')
     
     args = parser.parse_args()
     
@@ -455,7 +472,7 @@ def main():
             return 1
         
         # Export to JSON-LD
-        success = converter.export_jsonld(entities, args.output)
+        success = converter.export_jsonld(entities, args.output, args.web_app)
         
         if success:
             logger.info("Conversion completed successfully!")
