@@ -49,14 +49,11 @@ This will:
 # Convert the generated markdown files to a knowledge graph
 python scripts/yaml_to_jsonld_converter.py \
   --schema schemas/hyphaltips_mycomind_schema.json \
-  --input /path/to/your/obsidian/vault \
   --output mycomind_knowledge_graph.jsonld
 ```
 
-Replace `/path/to/your/obsidian/vault` with the actual path from your `config.json`.
-
 This will:
-- Process all markdown files with YAML frontmatter
+- Process all markdown files with YAML frontmatter in the `demo_vault/extracted_knowledge/project/` directory
 - Resolve WikiLinks (`[[Shawn]]` → proper IRI references)
 - Generate a complete JSON-LD knowledge graph
 
