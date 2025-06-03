@@ -31,19 +31,41 @@ The complete MycoMind workflow with Neo4j includes:
 ### Run the Complete Workflow
 
 ```bash
-cd scripts
-
 # 1. Download and install Neo4j
-python setup_neo4j.py --download
-python setup_neo4j.py --start
+python scripts/setup_neo4j.py --download
+python scripts/setup_neo4j.py --start
 
 # 2. Convert YAML to Cypher (automatically uses config.json settings)
-python yaml_to_neo4j_converter.py --browser
+python scripts/yaml_to_neo4j_converter.py \
+  --schema schemas/hyphaltips_mycomind_schema.json \
+  --input demo_vault/extracted_knowledge \
+  --output mycomind_knowledge_graph.cypher
 
-# 3. Load data and query in Neo4j Browser
-# Open http://localhost:7474 in your browser
-# Run: :source knowledge_graph.cypher
+# 3. Load data into Neo4j
+scripts/neo4j/neo4j-community-5.15.0/bin/cypher-shell -u neo4j -p '' < mycomind_knowledge_graph.cypher
+
+# 4. Explore in Neo4j Browser
+# Open http://localhost:7474 in your browser and start querying!
 ```
+
+### Sample Queries
+
+Once your data is loaded, try these Cypher queries in the Neo4j Browser:
+
+```cypher
+// Overview: Count all entities by type
+MATCH (n) RETURN labels(n) as entity_types, count(n) as count ORDER BY count DESC;
+
+// Find all people and their roles
+MATCH (person:RegenerativePerson) 
+RETURN person.name, person.location, person.currentRole;
+
+// Discover collaboration networks
+MATCH (p1)-[:COLLABORATESWITH]-(p2) 
+RETURN p1.name, p2.name;
+```
+
+**📚 Complete Query Collection**: See [docs/sample_cypher_queries.cypher](sample_cypher_queries.cypher) for 50+ ready-to-use queries covering all common use cases!
 
 ## Detailed Setup
 

@@ -1,150 +1,209 @@
-# MycoMind Knowledge Graph Query Interface
+# MycoMind: Personal Knowledge Management System
 
-A knowledge graph management system for MycoMind with multiple query interfaces:
+An AI-powered knowledge graph system that transforms unstructured text into queryable, visual knowledge networks. MycoMind combines LLM capabilities with graph database technologies to create semantic representations of your knowledge.
 
-1. **Browser-based SPARQL Interface**: Query your knowledge graph using full SPARQL 1.1 syntax directly in the browser
-2. **Neo4j Integration**: Visualize and query your knowledge graph using Neo4j's powerful browser interface
-3. **Apache Jena Fuseki Support**: Use standard SPARQL endpoints for advanced querying capabilities
+## Graph Database Backends
+
+MycoMind supports two powerful graph database backends:
+
+1. **🔥 Neo4j Integration** (Recommended): Visual graph exploration with Cypher queries and built-in web interface
+2. **Apache Jena Fuseki Support**: Standard SPARQL endpoints for semantic web applications with web-based querying
 
 ## Features
 
-### Browser-based SPARQL Interface
-- **No server required**: Query directly in your browser with SPARQL.js
-- **Full SPARQL 1.1 Support**: Execute standard SPARQL queries
-- **Entity Details**: Click on entity links to view detailed information
-- **Sample Queries**: Pre-defined queries for common use cases
-- **File Upload**: Load your own JSON-LD files
+### 🚀 **AI-Powered Entity Extraction**
+- **LLM Integration**: Uses OpenAI GPT models to identify entities and relationships
+- **Schema-Driven**: JSON-LD ontologies define extraction targets
+- **Obsidian Compatible**: Generates markdown files with YAML frontmatter
+- **Configurable**: Multiple LLM providers and extraction parameters
 
-### Neo4j Integration
-- **Visual Graph Exploration**: Intuitive visualization of your knowledge graph
-- **Cypher Query Language**: Powerful and expressive graph querying
-- **Built-in Graph Algorithms**: Network analysis, pathfinding, and more
-- **Interactive Browser**: Comprehensive web interface for data exploration
-- **Easy Setup**: Automated installation and configuration
+### 🔥 **Neo4j Integration**
+- **Visual Graph Exploration**: Interactive node-link diagrams with expandable details
+- **Cypher Query Language**: Powerful and intuitive graph querying syntax
+- **Built-in Web Interface**: Neo4j Browser at http://localhost:7474
+- **Graph Analytics**: Network analysis, pathfinding, centrality measures
+- **Automated Setup**: One-command installation and configuration
+
+### 🌐 **Apache Jena Fuseki Support**
+- **SPARQL 1.1 Compliance**: Full semantic web standards support
+- **Web Interface**: Built-in query interface at http://localhost:3030
+- **JSON-LD Export**: Standard linked data format
+- **Federation**: Connect with other SPARQL endpoints
 
 ## How It Works
 
-### Browser-based SPARQL Interface
-1. The interface loads JSON-LD data from `mycomind_knowledge_graph.jsonld`
-2. The data is parsed into an in-memory RDF store using N3.js
-3. SPARQL queries are parsed and executed using SPARQL.js
-4. Results are displayed in a table with clickable entity links
+### 📄 **Text to Knowledge Graph Pipeline**
+1. **Input**: Unstructured text documents (txt, md, pdf, docx, html)
+2. **AI Extraction**: LLM identifies entities and relationships based on your schema
+3. **Structured Output**: Generates Obsidian-compatible markdown with YAML frontmatter
+4. **Graph Database**: Converts to Neo4j Cypher or JSON-LD for Fuseki
+5. **Query & Explore**: Visual exploration and querying through web interfaces
 
-### Neo4j Integration
-1. YAML frontmatter from Markdown files is converted to Cypher statements
-2. Neo4j loads and processes these statements to build the knowledge graph
-3. The Neo4j Browser provides visualization and querying capabilities
-4. Results can be viewed as tables, graphs, or exported in various formats
+### 🔥 **Neo4j Workflow**
+1. YAML frontmatter → Cypher CREATE statements
+2. Automated Neo4j server setup and configuration
+3. Data loading via cypher-shell or Neo4j Browser
+4. Interactive visualization and Cypher querying
 
-## Generating the Knowledge Graph
+### 🌐 **Fuseki Workflow**
+1. YAML frontmatter → JSON-LD knowledge graph
+2. Automated Fuseki server setup and dataset creation
+3. Data loading via SPARQL UPDATE
+4. Standards-compliant SPARQL 1.1 querying
 
-### For Browser-based SPARQL Interface
+## Quick Start
 
-Generate a JSON-LD file from Markdown files with YAML frontmatter:
-
-```bash
-python scripts/yaml_to_jsonld_converter.py --schema schemas/hyphaltips_mycomind_schema.json --input /path/to/markdown/files --output mycomind_knowledge_graph.jsonld --web-app
-```
-
-The `--web-app` option automatically copies the generated JSON-LD file to the web app directory (`docs/web/mycomind_knowledge_graph.jsonld`), making it immediately available for querying in the web interface.
-
-### For Neo4j Integration
-
-Generate Cypher statements from Markdown files with YAML frontmatter:
+### 🏃‍♂️ **Get Started in 5 Minutes**
 
 ```bash
-python scripts/yaml_to_neo4j_converter.py --schema schemas/hyphaltips_mycomind_schema.json --input /path/to/markdown/files --output knowledge_graph.cypher --browser
+# 1. Install dependencies
+pip install -r scripts/requirements.txt
+
+# 2. Setup configuration (add your OpenAI API key)
+cp docs/examples/config_example.json config.json
+
+# 3. Extract entities from sample data
+python scripts/main_etl.py \
+  --schema schemas/hyphaltips_mycomind_schema.json \
+  --source docs/examples/sample_data/mycomind_project.txt \
+  --no-index
+
+# 4A. For Neo4j (Recommended)
+python scripts/setup_neo4j.py --download && python scripts/setup_neo4j.py --start
+python scripts/yaml_to_neo4j_converter.py \
+  --schema schemas/hyphaltips_mycomind_schema.json \
+  --input demo_vault/extracted_knowledge \
+  --output knowledge_graph.cypher
+# Load: Open http://localhost:7474 and run :source knowledge_graph.cypher
+
+# 4B. Or for Fuseki + SPARQL
+python scripts/setup_fuseki.py --download && python scripts/setup_fuseki.py --start
+python scripts/yaml_to_jsonld_converter.py \
+  --schema schemas/hyphaltips_mycomind_schema.json \
+  --input demo_vault/extracted_knowledge \
+  --output knowledge_graph.jsonld
+python scripts/graph_db_client.py --create-dataset --load knowledge_graph.jsonld
 ```
 
-The `--browser` option attempts to copy the generated Cypher file to the Neo4j import directory, making it available for loading via the `:source` command in the Neo4j Browser.
+### 📚 **Full Tutorial**
+
+For a complete step-by-step guide with sample queries, see: [**docs/examples/STEP_BY_STEP_EXAMPLE.md**](docs/examples/STEP_BY_STEP_EXAMPLE.md)
 
 ## Sample Queries
 
-- **Find People**: Find all RegenerativePerson entities with their details
-- **Find Projects**: Find all HyphalTip projects and their status
-- **Find Organizations**: Find all organizations in the knowledge graph
-- **Find Collaborations**: Discover collaboration relationships
-- **Find by Location**: Find entities in specific locations
-- **Network Analysis**: Find most connected entities
+### 🔥 **Neo4j Cypher Examples**
 
-## Usage
+```cypher
+// Find all people and their roles
+MATCH (person:RegenerativePerson) 
+RETURN person.name, person.location, person.currentRole;
 
-1. Open `index.html` in your browser
-2. The interface will automatically load the knowledge graph data
-3. Select a sample query or write your own SPARQL query
-4. Click "Execute Query" to run the query
-5. View the results in the table
-6. Click on entity links to view detailed information
+// Discover collaboration networks
+MATCH (p1)-[:COLLABORATESWITH]-(p2) 
+RETURN p1.name, p2.name;
 
-## Technologies Used
+// Find most connected entities
+MATCH (n)-[r]-() 
+RETURN n.name, count(r) as connections 
+ORDER BY connections DESC;
+```
 
-### Browser-based SPARQL Interface
-- **N3.js**: JavaScript library for working with RDF data
-- **SPARQL.js**: SPARQL 1.1 parser for JavaScript
-- **HTML/CSS/JavaScript**: Frontend interface
-- **JSON-LD**: Data format for the knowledge graph
+### 🌐 **SPARQL Examples**
 
-### Neo4j Integration
-- **Neo4j**: Graph database with visualization capabilities
-- **Cypher**: Graph query language
-- **Python**: Conversion and setup scripts
-- **Neo4j Browser**: Web interface for querying and visualization
+```sparql
+PREFIX myco: <http://mycomind.org/kg/ontology/>
 
-## Setup and Usage
+# Find all people with their details
+SELECT ?name ?location ?role WHERE {
+    ?person a myco:RegenerativePerson ;
+            myco:name ?name ;
+            myco:location ?location ;
+            myco:currentRole ?role .
+}
 
-### Browser-based SPARQL Interface
+# Find active projects
+SELECT ?project ?description WHERE {
+    ?project a myco:HyphalTip ;
+             myco:name ?project ;
+             myco:description ?description ;
+             myco:activityStatus "alive" .
+}
+```
 
-For local development, you may encounter CORS issues when trying to load the JSON-LD file. To avoid this, you can:
+### 🧠 **Meta-Queries: Explore MycoMind's Own Code**
 
-1. Use a local web server (e.g., `python -m http.server`)
-2. The interface now includes a fallback to sample data if the JSON-LD file cannot be loaded
+```cypher
+// Find all Python functions in the codebase
+MATCH (f:PythonFunction)-[:DEFINED_IN]->(m:PythonModule)
+RETURN f.name as Function, m.name as Module, f.signature
+ORDER BY Module, Function;
 
-For more detailed information, see the [Web SPARQL Interface documentation](docs/Web_SPARQL_Interface.md).
+// Discover feature implementations
+MATCH (feature:Feature)<-[:IMPLEMENTS]-(code:PythonFunction)
+RETURN feature.name as Feature, collect(code.name) as ImplementedBy;
 
-### Neo4j Integration
+// Analyze documentation coverage
+MATCH (f:PythonFunction)
+WHERE NOT EXISTS((f)<-[:DESCRIBES]-(:DocSection))
+RETURN f.name as UndocumentedFunction, f.source_file as File;
+```
 
-To set up and use Neo4j with MycoMind:
+**Full query collections with 50+ examples in the [step-by-step guide](docs/examples/STEP_BY_STEP_EXAMPLE.md) and [project knowledge graph docs](docs/Querying_Project_KG.md)!**
 
-1. Install and start Neo4j:
-   ```bash
-   python scripts/setup_neo4j.py --download
-   python scripts/setup_neo4j.py --start
-   ```
+## Core Technologies
 
-2. Convert your data to Cypher:
-   ```bash
-   python scripts/yaml_to_neo4j_converter.py --schema schemas/hyphaltips_mycomind_schema.json --input /path/to/markdown/files --output knowledge_graph.cypher
-   ```
+### 🤖 **AI & Language Processing**
+- **OpenAI GPT Models**: Entity extraction and relationship identification
+- **Schema-driven Prompting**: JSON-LD ontologies guide AI extraction
+- **Configurable LLM Pipeline**: Support for multiple providers and models
 
-3. Load the data in Neo4j Browser:
-   - Open http://localhost:7474
-   - Run `:source knowledge_graph.cypher`
+### 🔥 **Neo4j Stack**
+- **Neo4j Community 5.15.0**: High-performance graph database
+- **Cypher**: Declarative graph query language
+- **Neo4j Browser**: Built-in web interface for visualization and querying
+- **Python neo4j Driver**: Programmatic database access
 
-For more detailed information, see the [Neo4j Database Setup documentation](docs/Neo4j_Database_Setup.md).
+### 🌐 **Semantic Web Stack**
+- **Apache Jena Fuseki**: SPARQL 1.1 compliant triple store
+- **JSON-LD**: Linked data format for knowledge graphs
+- **RDF/RDFS**: Resource Description Framework standards
+- **Python rdflib**: RDF manipulation and SPARQL execution
 
-### Apache Jena Fuseki (Alternative)
+### 🔧 **Supporting Technologies**
+- **Python 3.8+**: Core application framework
+- **YAML + Markdown**: Human-readable structured documents
+- **Obsidian Compatible**: PKM integration and visualization
 
-For users who prefer a standard SPARQL endpoint:
+### 🧠 **Meta-Knowledge: Project Self-Analysis**
+- **Self-Documenting**: MycoMind analyzes its own codebase to create a queryable knowledge graph
+- **Code Architecture Queries**: Explore function dependencies, component relationships, and documentation coverage
+- **"Dogfooding" Demonstration**: Real-world example of AI + knowledge graphs for software understanding
+- **Advanced Use Case**: Query the project's own structure, find refactoring opportunities, trace features to implementation
 
-1. Install and start Fuseki:
-   ```bash
-   python scripts/setup_fuseki.py --download
-   python scripts/setup_fuseki.py --start
-   ```
+## Documentation
 
-2. Load your JSON-LD data:
-   ```bash
-   python scripts/graph_db_client.py --load mycomind_knowledge_graph.jsonld
-   ```
+| Topic | Description | Link |
+|-------|-------------|------|
+| **Getting Started** | Complete tutorial with sample data | [docs/examples/STEP_BY_STEP_EXAMPLE.md](docs/examples/STEP_BY_STEP_EXAMPLE.md) |
+| **🧠 Project Knowledge Graph** | **Query MycoMind's own codebase as a knowledge graph** | [docs/Querying_Project_KG.md](docs/Querying_Project_KG.md) |
+| **Architecture** | System design and components | [docs/Architecture.md](docs/Architecture.md) |
+| **Configuration** | Settings and environment setup | [docs/Configuration.md](docs/Configuration.md) |
+| **ETL Process** | Data extraction and transformation | [docs/ETL_Process.md](docs/ETL_Process.md) |
+| **Neo4j Setup** | Graph database installation and usage | [docs/Neo4j_Database_Setup.md](docs/Neo4j_Database_Setup.md) |
+| **Fuseki Setup** | SPARQL endpoint setup and querying | [docs/Graph_Database_Setup.md](docs/Graph_Database_Setup.md) |
+| **Schema Design** | Creating custom ontologies | [docs/Ontology_Design.md](docs/Ontology_Design.md) |
 
-For more detailed information, see the [Graph Database Setup documentation](docs/Graph_Database_Setup.md).
+## Requirements
 
-## GitHub Pages Deployment
+- **Python 3.8+**
+- **Java 17 or 21** (for Neo4j/Fuseki)
+- **OpenAI API Key** (or compatible LLM service)
+- **4GB+ RAM** recommended for graph databases
 
-This interface is designed to be deployed on GitHub Pages. The repository is configured to deploy from the `docs` folder.
+## License & Contributing
 
-The web interface files are located in the `docs/web` directory:
-- `docs/web/index.html` - The main web interface file
-- `docs/web/mycomind_knowledge_graph.jsonld` - The JSON-LD data file
+This project demonstrates modern AI + knowledge graph integration patterns. Contributions welcome!
 
-Visit the live interface at: https://[your-username].github.io/mycomind-kg-interface/web/
+---
+
+**🚀 Ready to build your knowledge graph?** Start with the [**Step-by-Step Tutorial**](docs/examples/STEP_BY_STEP_EXAMPLE.md)!

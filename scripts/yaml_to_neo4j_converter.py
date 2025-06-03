@@ -376,7 +376,7 @@ class YAMLToNeo4jConverter:
         
         for entity_type in sorted(entity_types):
             cypher_statements.append(f"// Create index for {entity_type} entities")
-            cypher_statements.append(f"CREATE INDEX ON :{entity_type}(iri);")
+            cypher_statements.append(f"CREATE INDEX FOR (n:{entity_type}) ON (n.iri);")
         
         cypher_statements.append("")
         

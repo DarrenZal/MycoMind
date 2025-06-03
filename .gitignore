@@ -1,4 +1,5 @@
-# Python
+# Pythonneo4j/
+fuseki/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -36,6 +37,12 @@ config.json
 *.log
 mycomind.log
 
+# Generated knowledge graph files (outputs from pipeline)
+knowledge_graph.cypher
+mycomind_knowledge_graph.cypher
+mycomind_knowledge_graph.jsonld
+demo_vault/
+
 # Debug files (development only)
 debug_*.py
 
@@ -58,5 +65,5 @@ Thumbs.db
 *.tmp
 *.temp
 
-neo4j/neo4j-community-5.15.0.tar.gz
+neo4j/
 scripts/neo4j/neo4j-community-5.15.0.tar.gz
