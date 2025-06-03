@@ -54,8 +54,7 @@ python scripts/yaml_to_jsonld_converter.py --schema schemas/hyphaltips_mycomind_
 For local development, you may encounter CORS issues when trying to load the JSON-LD file. To avoid this, you can:
 
 1. Use a local web server (e.g., `python -m http.server`)
-2. Use the "Load Sample Data" button to load embedded sample data
-3. Upload a JSON-LD file using the file input
+2. Upload a JSON-LD file using the file input
 
 ## GitHub Pages Deployment
 
