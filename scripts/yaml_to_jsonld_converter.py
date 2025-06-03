@@ -435,52 +435,57 @@ def main():
     parser.add_argument('--output', '-o', required=True, help='Output JSON-LD file path')
     parser.add_argument('--base-iri', default='http://mycomind.org/kg/', help='Base IRI for resources')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
-    parser.add_argument('--web-app', '-w', action='store_true', 
+    parser.add_argument('--web-app', '-w', action='store_true',
                         help='Also save the output to the web app directory (docs/web/mycomind_knowledge_graph.jsonld)')
-    
+
     args = parser.parse_args()
-    
+
     # Set up logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
     logging.basicConfig(
         level=log_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    
+
     # Validate arguments
-    if not args.input and not args.file:
-        logger.error("Either --input or --file must be specified")
-        return 1
-    
+    # if not args.input and not args.file:
+    #     logger.error("Either --input or --file must be specified")
+    #     return 1
+
     if args.input and args.file:
         logger.error("Cannot specify both --input and --file")
         return 1
-    
+
     try:
         # Initialize converter
         converter = YAMLToJSONLDConverter(args.schema, args.base_iri)
-        
+
         # Process files
         if args.file:
             entity = converter.process_file(args.file)
             entities = [entity] if entity else []
         else:
+            # Use the output from main_etl.py if no input is specified
+            if not args.input:
+                # Use the demo_vault as the default input directory
+                args.input = os.path.join("demo_vault", "extracted_knowledge", "project")
+                logger.info(f"Using default input directory: {args.input}")
             entities = converter.process_directory(args.input)
-        
+
         if not entities:
             logger.warning("No entities were converted")
             return 1
-        
+
         # Export to JSON-LD
         success = converter.export_jsonld(entities, args.output, args.web_app)
-        
+
         if success:
             logger.info("Conversion completed successfully!")
             return 0
         else:
             logger.error("Export failed")
             return 1
-            
+
     except Exception as e:
         logger.error(f"Conversion failed: {e}")
         return 1

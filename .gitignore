@@ -58,3 +58,12 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Neo4j
+neo4j/neo4j-community-5.15.0.tar.gz
+
+demo_vault/
+neo4j/
+fuseki/
+
+.gitignore

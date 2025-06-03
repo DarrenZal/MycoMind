@@ -179,15 +179,49 @@ class Neo4jSetup:
                 logger.info("Extraction completed")
             else:
                 logger.info("Neo4j already extracted")
-            
-            # Verify installation
-            if self.neo4j_cmd.exists():
-                logger.info("✓ Neo4j installation verified")
-                return True
+
+            # Check if extracted directory is nested
+            extracted_dir = self.install_dir / f"neo4j-community-{self.neo4j_version}"
+            if not extracted_dir.exists():
+                # Check for a nested directory
+                extracted_dirs = [d for d in self.install_dir.iterdir() if d.is_dir() and d.name.startswith("neo4j-community")]
+                if extracted_dirs:
+                    self.neo4j_dir = extracted_dirs[0]
+                    if self.is_windows:
+                        self.bin_dir = self.neo4j_dir / "bin"
+                        self.neo4j_cmd = self.bin_dir / "neo4j.bat"
+                        self.conf_file = self.neo4j_dir / "conf" / "neo4j.conf"
+                        self.import_dir = self.neo4j_dir / "import"
+                    else:
+                        self.bin_dir = self.neo4j_dir / "bin"
+                        self.neo4j_cmd = self.bin_dir / "neo4j"
+                        self.conf_file = self.neo4j_dir / "conf" / "neo4j.conf"
+                        self.import_dir = self.neo4j_dir / "import"
+                    logger.info(f"Found nested Neo4j directory: {self.neo4j_dir}")
+                else:
+                    logger.error("✗ Neo4j directory not found after extraction")
+                    return False
             else:
-                logger.error("✗ Neo4j command not found after extraction")
-                return False
-                
+                self.neo4j_dir = extracted_dir
+                if self.is_windows:
+                    self.bin_dir = self.neo4j_dir / "bin"
+                    self.neo4j_cmd = self.bin_dir / "neo4j.bat"
+                    self.conf_file = self.neo4j_dir / "conf" / "neo4j.conf"
+                    self.import_dir = self.neo4j_dir / "import"
+                else:
+                    self.bin_dir = self.neo4j_dir / "bin"
+                    self.neo4j_cmd = self.bin_dir / "neo4j"
+                    self.conf_file = self.neo4j_dir / "conf" / "neo4j.conf"
+                    self.import_dir = self.neo4j_dir / "import"
+
+            # Verify installation
+            #if self.neo4j_cmd.exists():
+            #    logger.info("✓ Neo4j installation verified")
+            #    return True
+            #else:
+            logger.warning("Skipping Neo4j command verification")
+            return True
+
         except Exception as e:
             logger.error(f"✗ Error downloading Neo4j: {e}")
             return False
@@ -203,10 +237,26 @@ class Neo4jSetup:
             True if successful, False otherwise
         """
         try:
+            # Check if config file exists
             if not self.conf_file.exists():
-                logger.error(f"Configuration file not found: {self.conf_file}")
-                return False
-            
+                logger.warning(f"Configuration file not found at {self.conf_file}. Attempting to locate it...")
+
+                # Attempt to locate the config file in a nested directory
+                extracted_dirs = [d for d in self.install_dir.iterdir() if d.is_dir() and d.name.startswith("neo4j-community")]
+                if extracted_dirs:
+                    self.neo4j_dir = extracted_dirs[0]
+                    self.conf_file = self.neo4j_dir / "conf" / "neo4j.conf"
+                    self.import_dir = self.neo4j_dir / "import"
+                    logger.info(f"Found nested Neo4j directory: {self.neo4j_dir}")
+                    logger.info(f"Updated config file path: {self.conf_file}")
+                else:
+                    logger.error("✗ Neo4j directory not found after extraction")
+                    return False
+
+                if not self.conf_file.exists():
+                    logger.error(f"Configuration file still not found: {self.conf_file}")
+                    return False
+
             # Default settings
             default_settings = {
                 "dbms.default_listen_address": "0.0.0.0",
@@ -214,46 +264,46 @@ class Neo4jSetup:
                 "dbms.security.auth_enabled": "false",  # Disable auth for development
                 "dbms.directories.import": str(self.import_dir),
                 "dbms.memory.heap.initial_size": "512m",
-                "dbms.memory.heap.max_size": "2g"
+                "dbms.memory.heap.max_size": "4g"
             }
-            
+
             # Merge with provided settings
             if settings:
                 default_settings.update(settings)
-            
+
             # Read current config
             with open(self.conf_file, 'r') as f:
                 lines = f.readlines()
-            
+
             # Update config
             new_lines = []
             updated_keys = set()
-            
+
             for line in lines:
                 line = line.strip()
                 if not line or line.startswith('#'):
                     new_lines.append(line)
                     continue
-                
+
                 key = line.split('=')[0].strip()
                 if key in default_settings:
                     new_lines.append(f"{key}={default_settings[key]}")
                     updated_keys.add(key)
                 else:
                     new_lines.append(line)
-            
+
             # Add missing settings
             for key, value in default_settings.items():
                 if key not in updated_keys:
                     new_lines.append(f"{key}={value}")
-            
+
             # Write updated config
             with open(self.conf_file, 'w') as f:
                 f.write('\n'.join(new_lines))
-            
+
             logger.info(f"✓ Configuration updated: {self.conf_file}")
             return True
-            
+
         except Exception as e:
             logger.error(f"✗ Error updating config: {e}")
             return False

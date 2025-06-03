@@ -120,6 +120,7 @@ class FusekiSetup:
 @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix ja:     <http://jena.hpl.hp.com/2005/11/Assembler#> .
+@prefix :       <#> .
 
 # MycoMind Knowledge Graph Service
 :service rdf:type fuseki:Service ;
@@ -187,6 +188,7 @@ class FusekiSetup:
             db_dir.mkdir(exist_ok=True)
             
             # Build command
+            fuseki_home = str(self.install_dir / f"apache-jena-fuseki-{self.fuseki_version}")
             cmd = [
                 'java',
                 f'-Xmx{memory}',
@@ -195,17 +197,33 @@ class FusekiSetup:
                 '--port', str(port)
             ]
             
-            logger.info(f"Starting Fuseki server on port {port}...")
+            logger.info(f"Starting Fuseki server on port {port} with FUSEKI_HOME {fuseki_home}...")
             logger.info(f"Command: {' '.join(cmd)}")
             
+            # Set environment variable
+            env = os.environ.copy()
+            env["FUSEKI_HOME"] = fuseki_home
+            env["JAVA_HOME"] = "/Users/darrenzal/.sdkman/candidates/java/current"
+            
+            # Log environment variables
+            logger.debug(f"FUSEKI_HOME: {env.get('FUSEKI_HOME')}")
+            logger.debug(f"JAVA_HOME: {env.get('JAVA_HOME')}")
+            logger.debug(f"Environment: {env}")
+            
             # Start server in background
-            with open(self.log_file, 'w') as log_f:
-                process = subprocess.Popen(
-                    cmd,
-                    stdout=log_f,
-                    stderr=subprocess.STDOUT,
-                    cwd=self.install_dir
-                )
+            try:
+                with open(self.log_file, 'w') as log_f:
+                    process = subprocess.Popen(
+                        cmd,
+                        stdout=log_f,
+                        stderr=subprocess.STDOUT,
+                        cwd=self.install_dir,
+                        env=env
+                    )
+            except Exception as e:
+                logger.error(f"✗ Error starting server: {e}")
+                logger.error(traceback.format_exc())
+                return False
             
             # Save PID
             with open(self.pid_file, 'w') as f:
@@ -295,7 +313,7 @@ class FusekiSetup:
         """
         try:
             # Check via HTTP ping
-            response = requests.get("http://localhost:3030/$/ping", timeout=2)
+            response = requests.get(f"http://localhost:3031/$/ping", timeout=2)
             return response.status_code == 200
         except:
             return False
@@ -393,8 +411,10 @@ def main():
                 setup.create_config()
             
             if setup.start_server(args.port, args.memory):
+                logger.info(f"Fuseki started on port {args.port}")
                 return 0
             else:
+                logger.error(f"Fuseki failed to start on port {args.port}")
                 return 1
         
         elif args.stop:

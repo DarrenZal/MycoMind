@@ -144,7 +144,7 @@ CREATE (extraction_component:Component {
 
 CREATE (output_component:Component {
   name: "Output Generation", 
-  description: "Generates Obsidian-compatible notes with proper formatting",
+  description: "Generates Obsidian-compatible notes with YAML frontmatter",
   type: "interface",
   responsibility: "Create structured Markdown files with YAML frontmatter and WikiLinks"
 });
@@ -448,11 +448,11 @@ MATCH (ontology_concept:Concept {name: "Ontology-Driven Knowledge Extraction"})
 CREATE (etl_concept)-[:RELATED_TO]->(ontology_concept);
 
 // Create indexes for better query performance
-CREATE INDEX ON :PythonFunction(name);
-CREATE INDEX ON :PythonClass(name);
-CREATE INDEX ON :PythonModule(name);
-CREATE INDEX ON :Component(name);
-CREATE INDEX ON :Feature(name);
-CREATE INDEX ON :DocSection(name);
-CREATE INDEX ON :Concept(name);
-CREATE INDEX ON :Configuration(name);
+CREATE INDEX FOR (n:PythonFunction) ON (n.name);
+CREATE INDEX FOR (n:PythonClass) ON (n.name);
+CREATE INDEX FOR (n:PythonModule) ON (n.name);
+CREATE INDEX FOR (n:Component) ON (n.name);
+CREATE INDEX FOR (n:Feature) ON (n.name);
+CREATE INDEX FOR (n:DocSection) ON (n.name);
+CREATE INDEX FOR (n:Concept) ON (n.name);
+CREATE INDEX FOR (n:Configuration) ON (n.name);

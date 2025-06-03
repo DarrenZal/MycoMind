@@ -3,7 +3,7 @@
 // Schema: HyphalTips MycoMind Schema
 
 // Uncomment to clear existing data (use with caution)
-// MATCH (n) DETACH DELETE n;
+MATCH (n) DETACH DELETE n;
 
 // Create index for HyphalTip entities
 CREATE INDEX ON :HyphalTip(iri);

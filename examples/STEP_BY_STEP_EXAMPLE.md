@@ -59,21 +59,37 @@ This will:
 
 ## Step 4: Set Up Graph Database
 
+We recommend using Apache Jena Fuseki for this step. However, if you encounter issues with Fuseki, you can consider using alternative SPARQL engines such as:
+
+*   **GraphDB** (Ontotext): A commercial product with a free version, offering a user-friendly web interface.
+*   **Stardog**: Another commercial product with a free version, providing a web-based workbench.
+
+**Instructions for Apache Jena Fuseki:**
+
 ```bash
 # Download and install Apache Jena Fuseki
 cd scripts
 python setup_fuseki.py --download
 
-# Start the Fuseki server
-python setup_fuseki.py --start
+# Start the Fuseki server on port 3031
+python setup_fuseki.py --start --port 3031
 
 # Verify it's running
 python setup_fuseki.py --status
 ```
 
 You should see:
-- Fuseki server running on http://localhost:3030
+- Fuseki server running on http://localhost:3031
 - Web interface accessible for manual queries
+
+**Alternative SPARQL Engines:**
+
+If you encounter issues with Apache Jena Fuseki, you can consider using alternative SPARQL engines such as:
+
+*   **GraphDB** (Ontotext): A commercial product with a free version, offering a user-friendly web interface. Download from: [https://www.ontotext.com/products/graphdb/](https://www.ontotext.com/products/graphdb/)
+*   **Stardog**: Another commercial product with a free version, providing a web-based workbench. Download from: [https://www.stardog.com/](https://www.stardog.com/)
+
+Please refer to their respective documentation for installation and setup instructions. Once you have installed and set up GraphDB or Stardog, follow their instructions to create a new repository or database and load the `mycomind_knowledge_graph.jsonld` file into it. Then, try running some of the sample queries provided in **Step 6: Query Your Knowledge Graph** to verify that the data has been loaded correctly.
 
 ## Step 5: Load Data into Graph Database
 
@@ -85,22 +101,7 @@ python scripts/graph_db_client.py --load mycomind_knowledge_graph.jsonld
 
 ## Step 6: Query Your Knowledge Graph
 
-### 🌐 Option 1: JavaScript Web Interface (Recommended)
-
-**No Java required! Works in any modern browser.**
-
-```bash
-# Open the web query interface
-open web_query_interface.html
-```
-
-This opens a beautiful web interface where you can:
-1. **Load your knowledge graph**: Click "Choose File" and select `mycomind_knowledge_graph.jsonld`
-2. **Try sample queries**: Click any sample query button (👤 Find People, 🚀 Find Projects, etc.)
-3. **Write custom SPARQL**: Edit queries in the built-in editor
-4. **View results**: See results in formatted tables
-
-### 💻 Option 2: JavaScript Command-Line Interface (Node.js)
+### 💻 Option 1: JavaScript Command-Line Interface (Node.js)
 
 **No Java required! Command-line interface using the same JavaScript engine.**
 
@@ -122,7 +123,7 @@ This provides:
 - Formatted table output
 - Support for custom queries
 
-### 🖥️ Option 3: Fuseki Graph Database (Java 11+ Required)
+### 🖥️ Option 2: Fuseki Graph Database (Java 11+ Required)
 
 **Check your Java version first:**
 
@@ -144,10 +145,6 @@ python scripts/graph_db_client.py --load mycomind_knowledge_graph.jsonld
 # Start interactive querying
 python scripts/graph_db_client.py --interactive
 ```
-
-**If you have Java 8 (like many macOS systems):**
-
-Use the JavaScript web interface above - it's actually more user-friendly!
 
 ### Sample Queries to Try
 
@@ -319,15 +316,91 @@ After completing this workflow, you should have:
 
 ## Troubleshooting
 
+### Fuseki Startup Issues - Troubleshooting
+
+If Fuseki fails to start, you may encounter a `java.net.BindException: Address already in use` error. This means that the port Fuseki is trying to use is already occupied by another application. Here's a comprehensive set of debugging steps to identify the root cause:
+
+**1. Verify Port Availability:**
+
+   *   Before starting Fuseki, pick a port (e.g., 3031 or a less common one like 13031).
+   *   Open your Mac's Terminal and run: `lsof -i :3031` (replace 3031 with your chosen port).
+   *   If this command shows any output: Note the PID and command. That process is using the port. You'll need to stop it (e.g., `kill <PID>`) or choose a different port for Fuseki.
+   *   If this command shows no output: The port should be free. Proceed to the next steps.
+
+**2. Run Fuseki Directly from Terminal:**
+
+   *   This bypasses the Python script and can give clearer error messages directly from Fuseki.
+   *   Open Terminal.
+   *   Set your `JAVA_HOME` (ensure it's active in your current shell session):
+        *   `export JAVA_HOME="/Users/darrenzal/.sdkman/candidates/java/current"`
+        *   `export PATH="$JAVA_HOME/bin:$PATH"`
+   *   Navigate to your Fuseki installation directory:
+        *   `cd /Users/darrenzal/MycoMind/fuseki/apache-jena-fuseki-4.10.0`
+   *   Try to start Fuseki with your chosen verified free port and specify localhost for the host:
+        *   `java -Xmx2g -jar fuseki-server.jar --host 127.0.0.1 --port 3031 --config /Users/darrenzal/MycoMind/fuseki/mycomind-config.ttl --verbose`
+        *   (Replace 3031 if you chose a different port. Using `--host 127.0.0.1` tells Fuseki to only listen on the loopback interface).
+   *   Carefully observe all output in the terminal. Look for any error messages.
+
+**3. Inspect the Fuseki Configuration File:**
+
+   *   The file `/Users/darrenzal/MycoMind/fuseki/mycomind-config.ttl` defines your datasets and server configuration.
+   *   Open this file in a text editor.
+   *   Look for any directives that explicitly set a port (e.g., `fuseki:port`, `jetty:port`) or define multiple server instances.
+   *   For testing purposes only: If you suspect the config file, you could try running Fuseki with a very minimal or default configuration (if available from Jena examples) to see if it starts.
+
+**4. Check Java Version:**
+
+   *   Ensure your Java version is compatible. Apache Jena 4.10.0 requires Java 11 or later.
+   *   Run: `/Users/darrenzal/.sdkman/candidates/java/current/bin/java -version`
+   *   Confirm it shows a version like OpenJDK 11, 17, 21, etc.
+
+**5. Look for Detailed Fuseki Logs:**
+
+   *   Fuseki might generate its own logs, often in a `logs` subdirectory within its installation folder or as specified in a `log4j2.properties` file. These logs might provide more detailed error context.
+
+**6. macOS Firewall:**
+
+   *   Go to `System Settings -> Network -> Firewall`.
+   *   If it's enabled, try temporarily disabling it briefly for testing purposes to see if Fuseki starts.
+   *   If this resolves the issue, you'll need to add an explicit rule to allow incoming connections for Java or the specific port Fuseki uses.
+
+**7. Restart Your Mac:**
+
+   *   Sometimes, network resources can get into a strange state, and a full restart can clear these up.
+
+**Note:** If you are still encountering issues, try running the Fuseki server directly from the terminal as described in step 2. This can often provide more detailed error messages and help pinpoint the root cause of the problem.
+
 ### Java Version Issues
 If Fuseki fails to start with Java version errors:
+
 ```bash
 # Check your Java version
 java -version
-
-# Fuseki 4.10.0 requires Java 11+
-# Install Java 11+ or use an older Fuseki version
 ```
+
+The output should show version 11 or higher. If you see a version lower than 11, you need to install a more recent version of Java.
+
+**Installing Java 11+ (Example using SDKMAN!):**
+
+1. **Install SDKMAN!** (if you don't have it already):
+   ```bash
+   curl -s "https://get.sdkman.io" | bash
+   source "$HOME/.sdkman/bin/sdkman-init.sh"
+   ```
+
+2. **Install a suitable Java version (e.g., Temurin 17):**
+   ```bash
+   sdk install java 17-temurin
+   ```
+
+3. **Verify the installation:**
+   ```bash
+   java -version
+   ```
+
+   Make sure the output now shows a version 11 or higher.
+
+**Note:** The exact steps for installing Java may vary depending on your operating system and preferred package manager.
 
 ### No Entities Extracted
 If the ETL pipeline doesn't extract entities:
