@@ -58,6 +58,10 @@ For local development, you may encounter CORS issues when trying to load the JSO
 
 ## GitHub Pages Deployment
 
-This interface is designed to be deployed on GitHub Pages. The repository is configured to deploy from the master branch.
+This interface is designed to be deployed on GitHub Pages. The repository is configured to deploy from the `docs` folder.
 
-Visit the live interface at: https://[your-username].github.io/mycomind-kg-interface/
+The web interface files are located in the `docs/web` directory:
+- `docs/web/index.html` - The main web interface file
+- `docs/web/mycomind_knowledge_graph.jsonld` - The JSON-LD data file
+
+Visit the live interface at: https://[your-username].github.io/mycomind-kg-interface/web/
