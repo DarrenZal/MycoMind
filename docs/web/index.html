@@ -259,7 +259,10 @@ LIMIT 10
                                 
                                 // Add type
                                 if (entity["@type"]) {
-                                    store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                                    // Check if this triple already exists
+                                    if (!store.holds(subject, RDF('type'), $rdf.sym(entity["@type"]))) {
+                                        store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                                    }
                                 }
                                 
                                 // Add all other properties
@@ -272,20 +275,44 @@ LIMIT 10
                                         value.forEach(v => {
                                             if (typeof v === 'object' && v["@id"]) {
                                                 // Reference to another entity
-                                                store.add(subject, $rdf.sym(key), $rdf.sym(v["@id"]));
+                                                const objNode = $rdf.sym(v["@id"]);
+                                                const predNode = $rdf.sym(key);
+                                                
+                                                // Check if this triple already exists
+                                                if (!store.holds(subject, predNode, objNode)) {
+                                                    store.add(subject, predNode, objNode);
+                                                }
                                             } else {
                                                 // Literal value
-                                                store.add(subject, $rdf.sym(key), $rdf.lit(v));
+                                                const predNode = $rdf.sym(key);
+                                                const objNode = $rdf.lit(v);
+                                                
+                                                // Check if this triple already exists
+                                                if (!store.holdsQuad(subject, predNode, objNode)) {
+                                                    store.add(subject, predNode, objNode);
+                                                }
                                             }
                                         });
                                     } 
                                     // Handle object values (references to other entities)
                                     else if (typeof value === 'object' && value["@id"]) {
-                                        store.add(subject, $rdf.sym(key), $rdf.sym(value["@id"]));
+                                        const objNode = $rdf.sym(value["@id"]);
+                                        const predNode = $rdf.sym(key);
+                                        
+                                        // Check if this triple already exists
+                                        if (!store.holds(subject, predNode, objNode)) {
+                                            store.add(subject, predNode, objNode);
+                                        }
                                     }
                                     // Handle literal values
                                     else {
-                                        store.add(subject, $rdf.sym(key), $rdf.lit(value));
+                                        const predNode = $rdf.sym(key);
+                                        const objNode = $rdf.lit(value);
+                                        
+                                        // Check if this triple already exists
+                                        if (!store.holdsQuad(subject, predNode, objNode)) {
+                                            store.add(subject, predNode, objNode);
+                                        }
                                     }
                                 });
                             });
@@ -346,7 +373,10 @@ LIMIT 10
                                 
                                 // Add type
                                 if (entity["@type"]) {
-                                    store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                                    // Check if this triple already exists
+                                    if (!store.holds(subject, RDF('type'), $rdf.sym(entity["@type"]))) {
+                                        store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                                    }
                                 }
                                 
                                 // Add all other properties
@@ -359,20 +389,44 @@ LIMIT 10
                                         value.forEach(v => {
                                             if (typeof v === 'object' && v["@id"]) {
                                                 // Reference to another entity
-                                                store.add(subject, $rdf.sym(key), $rdf.sym(v["@id"]));
+                                                const objNode = $rdf.sym(v["@id"]);
+                                                const predNode = $rdf.sym(key);
+                                                
+                                                // Check if this triple already exists
+                                                if (!store.holds(subject, predNode, objNode)) {
+                                                    store.add(subject, predNode, objNode);
+                                                }
                                             } else {
                                                 // Literal value
-                                                store.add(subject, $rdf.sym(key), $rdf.lit(v));
+                                                const predNode = $rdf.sym(key);
+                                                const objNode = $rdf.lit(v);
+                                                
+                                                // Check if this triple already exists
+                                                if (!store.holdsQuad(subject, predNode, objNode)) {
+                                                    store.add(subject, predNode, objNode);
+                                                }
                                             }
                                         });
                                     } 
                                     // Handle object values (references to other entities)
                                     else if (typeof value === 'object' && value["@id"]) {
-                                        store.add(subject, $rdf.sym(key), $rdf.sym(value["@id"]));
+                                        const objNode = $rdf.sym(value["@id"]);
+                                        const predNode = $rdf.sym(key);
+                                        
+                                        // Check if this triple already exists
+                                        if (!store.holds(subject, predNode, objNode)) {
+                                            store.add(subject, predNode, objNode);
+                                        }
                                     }
                                     // Handle literal values
                                     else {
-                                        store.add(subject, $rdf.sym(key), $rdf.lit(value));
+                                        const predNode = $rdf.sym(key);
+                                        const objNode = $rdf.lit(value);
+                                        
+                                        // Check if this triple already exists
+                                        if (!store.holdsQuad(subject, predNode, objNode)) {
+                                            store.add(subject, predNode, objNode);
+                                        }
                                     }
                                 });
                             });
@@ -445,33 +499,75 @@ LIMIT 10
                     ]
                 };
                 
-                // Add triples manually since parse() might not be working correctly
+                // Process the sample data using the same function we use for JSON-LD files
                 try {
-                    // Add RegenerativePerson/Shawn
-                    const shawn = $rdf.sym("http://mycomind.org/kg/resource/RegenerativePerson/Shawn");
-                    store.add(shawn, RDF('type'), MYCO('RegenerativePerson'));
-                    store.add(shawn, MYCO('name'), $rdf.lit("Shawn"));
-                    store.add(shawn, MYCO('location'), $rdf.lit("Portland"));
-                    store.add(shawn, MYCO('currentRole'), $rdf.lit("Developer"));
-                    store.add(shawn, MYCO('bio'), $rdf.lit("A brilliant developer with a background in semantic web technologies"));
+                    // Process each entity in the @graph array
+                    sampleData["@graph"].forEach(entity => {
+                        const subject = $rdf.sym(entity["@id"]);
+                        
+                        // Add type
+                        if (entity["@type"]) {
+                            // Check if this triple already exists
+                            if (!store.holds(subject, RDF('type'), $rdf.sym(entity["@type"]))) {
+                                store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                            }
+                        }
+                        
+                        // Add all other properties
+                        Object.entries(entity).forEach(([key, value]) => {
+                            // Skip @id and @type as they're handled separately
+                            if (key === "@id" || key === "@type") return;
+                            
+                            // Handle array values
+                            if (Array.isArray(value)) {
+                                value.forEach(v => {
+                                    if (typeof v === 'object' && v["@id"]) {
+                                        // Reference to another entity
+                                        const objNode = $rdf.sym(v["@id"]);
+                                        const predNode = $rdf.sym(key);
+                                        
+                                        // Check if this triple already exists
+                                        if (!store.holds(subject, predNode, objNode)) {
+                                            store.add(subject, predNode, objNode);
+                                        }
+                                    } else {
+                                        // Literal value
+                                        const predNode = $rdf.sym(key);
+                                        const objNode = $rdf.lit(v);
+                                        
+                                        // Check if this triple already exists
+                                        if (!store.holdsQuad(subject, predNode, objNode)) {
+                                            store.add(subject, predNode, objNode);
+                                        }
+                                    }
+                                });
+                            } 
+                            // Handle object values (references to other entities)
+                            else if (typeof value === 'object' && value["@id"]) {
+                                const objNode = $rdf.sym(value["@id"]);
+                                const predNode = $rdf.sym(key);
+                                
+                                // Check if this triple already exists
+                                if (!store.holds(subject, predNode, objNode)) {
+                                    store.add(subject, predNode, objNode);
+                                }
+                            }
+                            // Handle literal values
+                            else {
+                                const predNode = $rdf.sym(key);
+                                const objNode = $rdf.lit(value);
+                                
+                                // Check if this triple already exists
+                                if (!store.holdsQuad(subject, predNode, objNode)) {
+                                    store.add(subject, predNode, objNode);
+                                }
+                            }
+                        });
+                    });
                     
-                    // Add HyphalTip/MycoMind
-                    const mycomindTip = $rdf.sym("http://mycomind.org/kg/resource/HyphalTip/MycoMind");
-                    store.add(mycomindTip, RDF('type'), MYCO('HyphalTip'));
-                    store.add(mycomindTip, MYCO('name'), $rdf.lit("MycoMind: Personal Knowledge Management System"));
-                    store.add(mycomindTip, MYCO('activityStatus'), $rdf.lit("alive"));
-                    store.add(mycomindTip, MYCO('collaborator'), shawn);
-                    
-                    // Add Project/MycoMind
-                    const mycomindProject = $rdf.sym("http://mycomind.org/kg/resource/Project/MycoMind");
-                    store.add(mycomindProject, RDF('type'), MYCO('Project'));
-                    store.add(mycomindProject, MYCO('name'), $rdf.lit("MycoMind"));
-                    store.add(mycomindProject, MYCO('status'), $rdf.lit("in-progress"));
-                    store.add(mycomindProject, MYCO('description'), $rdf.lit("A project to build a personal knowledge management system"));
-                    
-                    console.log("Added triples manually");
+                    console.log("Added sample data triples");
                 } catch (e) {
-                    console.error("Error adding triples manually:", e);
+                    console.error("Error adding sample data triples:", e);
                 }
                 
                 // Count entities
