@@ -217,7 +217,7 @@ LIMIT 10
         async function initStore() {
             try {
                 console.log('RDFLib store initialized');
-                showStatus('info', 'Ready to load knowledge graph. Please upload a file or use the sample data.');
+                showStatus('info', 'Ready to load knowledge graph. Please wait while we load the data or upload a file manually.');
             } catch (error) {
                 console.error('Failed to initialize RDF store:', error);
                 showStatus('error', 'Failed to initialize RDF store');
@@ -242,8 +242,58 @@ LIMIT 10
                     // Clear the store before loading new data
                     store.removeStatements(store.statements);
                     
+                    // Clear the store before loading new data
+                    store.removeStatements(store.statements);
+                    
                     // Parse and load the JSON-LD into the RDF store
-                    $rdf.parse(JSON.stringify(jsonldData), store, "http://mycomind.org/kg/", "application/ld+json");
+                    try {
+                        $rdf.parse(JSON.stringify(jsonldData), store, "http://mycomind.org/kg/", "application/ld+json");
+                        
+                        // If parsing didn't work (no statements added), add triples manually
+                        if (store.statements.length === 0 && jsonldData["@graph"]) {
+                            console.log("Parsing didn't add any triples. Adding manually...");
+                            
+                            // Process each entity in the @graph array
+                            jsonldData["@graph"].forEach(entity => {
+                                const subject = $rdf.sym(entity["@id"]);
+                                
+                                // Add type
+                                if (entity["@type"]) {
+                                    store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                                }
+                                
+                                // Add all other properties
+                                Object.entries(entity).forEach(([key, value]) => {
+                                    // Skip @id and @type as they're handled separately
+                                    if (key === "@id" || key === "@type") return;
+                                    
+                                    // Handle array values
+                                    if (Array.isArray(value)) {
+                                        value.forEach(v => {
+                                            if (typeof v === 'object' && v["@id"]) {
+                                                // Reference to another entity
+                                                store.add(subject, $rdf.sym(key), $rdf.sym(v["@id"]));
+                                            } else {
+                                                // Literal value
+                                                store.add(subject, $rdf.sym(key), $rdf.lit(v));
+                                            }
+                                        });
+                                    } 
+                                    // Handle object values (references to other entities)
+                                    else if (typeof value === 'object' && value["@id"]) {
+                                        store.add(subject, $rdf.sym(key), $rdf.sym(value["@id"]));
+                                    }
+                                    // Handle literal values
+                                    else {
+                                        store.add(subject, $rdf.sym(key), $rdf.lit(value));
+                                    }
+                                });
+                            });
+                        }
+                    } catch (parseError) {
+                        console.error("Error parsing JSON-LD:", parseError);
+                        throw parseError;
+                    }
                     
                     // Count entities
                     const entities = store.each(null, RDF('type'), null);
@@ -252,19 +302,20 @@ LIMIT 10
                     // Log all statements for debugging
                     console.log("Total statements:", store.statements.length);
                     
+                    if (store.statements.length === 0) {
+                        throw new Error("Failed to load any statements from the JSON-LD file");
+                    }
+                    
                     showStatus('success', `Loaded knowledge graph with ${entities.length} entities`);
                     return true;
                 } catch (fetchError) {
                     console.error('Error fetching JSON-LD file:', fetchError);
-                    console.log('Falling back to sample data...');
-                    
-                    // If fetch fails (e.g., when running locally), fall back to sample data
-                    await loadSampleData();
-                    return true;
+                    showStatus('error', 'Error loading knowledge graph file. Please upload a file manually.');
+                    return false;
                 }
             } catch (error) {
                 console.error('Error loading knowledge graph:', error);
-                showStatus('error', 'Error loading knowledge graph. Please upload a file manually or use the sample data.');
+                showStatus('error', 'Error loading knowledge graph. Please upload a file manually.');
                 return false;
             }
         }
@@ -276,15 +327,72 @@ LIMIT 10
                 try {
                     showStatus('loading', 'Loading knowledge graph...');
                     const text = await file.text();
+                    const jsonldData = JSON.parse(text);
                     
                     // Clear the store before loading new data
                     store.removeStatements(store.statements);
                     
                     // Parse and load the JSON-LD into the RDF store
-                    $rdf.parse(text, store, "http://mycomind.org/kg/", "application/ld+json");
+                    try {
+                        $rdf.parse(text, store, "http://mycomind.org/kg/", "application/ld+json");
+                        
+                        // If parsing didn't work (no statements added), add triples manually
+                        if (store.statements.length === 0 && jsonldData["@graph"]) {
+                            console.log("Parsing didn't add any triples. Adding manually...");
+                            
+                            // Process each entity in the @graph array
+                            jsonldData["@graph"].forEach(entity => {
+                                const subject = $rdf.sym(entity["@id"]);
+                                
+                                // Add type
+                                if (entity["@type"]) {
+                                    store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                                }
+                                
+                                // Add all other properties
+                                Object.entries(entity).forEach(([key, value]) => {
+                                    // Skip @id and @type as they're handled separately
+                                    if (key === "@id" || key === "@type") return;
+                                    
+                                    // Handle array values
+                                    if (Array.isArray(value)) {
+                                        value.forEach(v => {
+                                            if (typeof v === 'object' && v["@id"]) {
+                                                // Reference to another entity
+                                                store.add(subject, $rdf.sym(key), $rdf.sym(v["@id"]));
+                                            } else {
+                                                // Literal value
+                                                store.add(subject, $rdf.sym(key), $rdf.lit(v));
+                                            }
+                                        });
+                                    } 
+                                    // Handle object values (references to other entities)
+                                    else if (typeof value === 'object' && value["@id"]) {
+                                        store.add(subject, $rdf.sym(key), $rdf.sym(value["@id"]));
+                                    }
+                                    // Handle literal values
+                                    else {
+                                        store.add(subject, $rdf.sym(key), $rdf.lit(value));
+                                    }
+                                });
+                            });
+                        }
+                    } catch (parseError) {
+                        console.error("Error parsing JSON-LD:", parseError);
+                        throw parseError;
+                    }
                     
                     // Count entities
                     const entities = store.each(null, RDF('type'), null);
+                    console.log("Loaded entities:", entities);
+                    
+                    // Log all statements for debugging
+                    console.log("Total statements:", store.statements.length);
+                    
+                    if (store.statements.length === 0) {
+                        throw new Error("Failed to load any statements from the JSON-LD file");
+                    }
+                    
                     showStatus('success', `Loaded knowledge graph with ${entities.length} entities`);
                 } catch (error) {
                     console.error('Error loading file:', error);
@@ -293,88 +401,7 @@ LIMIT 10
             }
         });
 
-        // Load sample data (embedded in the page)
-        async function loadSampleData() {
-            try {
-                showStatus('loading', 'Loading sample data...');
-                
-                // Clear the store before loading new data
-                store.removeStatements(store.statements);
-                
-                // Sample JSON-LD data based on the MycoMind schema
-                const sampleData = {
-                    "@context": {
-                        "@vocab": "http://mycomind.org/kg/ontology/",
-                        "@base": "http://mycomind.org/kg/resource/",
-                        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-                        "rdfs": "http://www.w3.org/2000/01/rdf-schema#"
-                    },
-                    "@graph": [
-                        {
-                            "@id": "http://mycomind.org/kg/resource/RegenerativePerson/Shawn",
-                            "@type": "http://mycomind.org/kg/ontology/RegenerativePerson",
-                            "http://mycomind.org/kg/ontology/name": "Shawn",
-                            "http://mycomind.org/kg/ontology/location": "Portland",
-                            "http://mycomind.org/kg/ontology/currentRole": "Developer",
-                            "http://mycomind.org/kg/ontology/bio": "A brilliant developer with a background in semantic web technologies"
-                        },
-                        {
-                            "@id": "http://mycomind.org/kg/resource/HyphalTip/MycoMind",
-                            "@type": "http://mycomind.org/kg/ontology/HyphalTip",
-                            "http://mycomind.org/kg/ontology/name": "MycoMind: Personal Knowledge Management System",
-                            "http://mycomind.org/kg/ontology/activityStatus": "alive",
-                            "http://mycomind.org/kg/ontology/collaborator": [
-                                {"@id": "http://mycomind.org/kg/resource/RegenerativePerson/Shawn"}
-                            ]
-                        },
-                        {
-                            "@id": "http://mycomind.org/kg/resource/Project/MycoMind",
-                            "@type": "http://mycomind.org/kg/ontology/Project",
-                            "http://mycomind.org/kg/ontology/name": "MycoMind",
-                            "http://mycomind.org/kg/ontology/status": "in-progress",
-                            "http://mycomind.org/kg/ontology/description": "A project to build a personal knowledge management system"
-                        }
-                    ]
-                };
-                
-                // Add triples manually since parse() might not be working correctly
-                try {
-                    // Add RegenerativePerson/Shawn
-                    const shawn = $rdf.sym("http://mycomind.org/kg/resource/RegenerativePerson/Shawn");
-                    store.add(shawn, RDF('type'), MYCO('RegenerativePerson'));
-                    store.add(shawn, MYCO('name'), $rdf.lit("Shawn"));
-                    store.add(shawn, MYCO('location'), $rdf.lit("Portland"));
-                    store.add(shawn, MYCO('currentRole'), $rdf.lit("Developer"));
-                    store.add(shawn, MYCO('bio'), $rdf.lit("A brilliant developer with a background in semantic web technologies"));
-                    
-                    // Add HyphalTip/MycoMind
-                    const mycomindTip = $rdf.sym("http://mycomind.org/kg/resource/HyphalTip/MycoMind");
-                    store.add(mycomindTip, RDF('type'), MYCO('HyphalTip'));
-                    store.add(mycomindTip, MYCO('name'), $rdf.lit("MycoMind: Personal Knowledge Management System"));
-                    store.add(mycomindTip, MYCO('activityStatus'), $rdf.lit("alive"));
-                    store.add(mycomindTip, MYCO('collaborator'), shawn);
-                    
-                    // Add Project/MycoMind
-                    const mycomindProject = $rdf.sym("http://mycomind.org/kg/resource/Project/MycoMind");
-                    store.add(mycomindProject, RDF('type'), MYCO('Project'));
-                    store.add(mycomindProject, MYCO('name'), $rdf.lit("MycoMind"));
-                    store.add(mycomindProject, MYCO('status'), $rdf.lit("in-progress"));
-                    store.add(mycomindProject, MYCO('description'), $rdf.lit("A project to build a personal knowledge management system"));
-                    
-                    console.log("Added triples manually");
-                } catch (e) {
-                    console.error("Error adding triples manually:", e);
-                }
-                
-                // Count entities
-                const entities = store.each(null, RDF('type'), null);
-                console.log("Entities:", entities);
-                showStatus('success', `Loaded sample data with ${entities.length} entities. Try the sample queries!`);
-            } catch (error) {
-                console.error('Error loading sample data:', error);
-                showStatus('error', 'Error loading sample data: ' + error.message);
-            }
-        }
+        // Sample data loading has been removed to ensure we only use actual data
 
         // Execute SPARQL query using rdflib
         async function executeQuery() {
@@ -800,7 +827,7 @@ SELECT ?entity ?name ?type WHERE {
                 await loadLocalKnowledgeGraph();
             } catch (error) {
                 console.error('Failed to load local knowledge graph:', error);
-                showStatus('error', 'Failed to load local knowledge graph. Please upload a file manually or use the sample data.');
+                showStatus('error', 'Failed to load local knowledge graph. Please upload a file manually.');
             }
         });
     </script>
