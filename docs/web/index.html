@@ -144,7 +144,7 @@
                 <small>This file can be generated using the Python script:<br>
                 <code>python scripts/yaml_to_jsonld_converter.py --schema schemas/hyphaltips_mycomind_schema.json --input /path/to/markdown/files --output mycomind_knowledge_graph.jsonld</code></small>
             </div>
-            <!-- Sample data loading removed as we're using the actual JSON-LD file -->
+            <button onclick="loadSampleData()">Load Sample Data</button>
             <div id="loadStatus"></div>
         </div>
 
@@ -217,7 +217,7 @@ LIMIT 10
         async function initStore() {
             try {
                 console.log('RDFLib store initialized');
-                showStatus('info', 'Ready to load knowledge graph. Please wait while we load the data or upload a file manually.');
+                showStatus('info', 'Ready to load knowledge graph. Please upload a JSON-LD file or click "Load Sample Data"');
             } catch (error) {
                 console.error('Failed to initialize RDF store:', error);
                 showStatus('error', 'Failed to initialize RDF store');
@@ -401,7 +401,88 @@ LIMIT 10
             }
         });
 
-        // Sample data loading has been removed to ensure we only use actual data
+        // Load sample data (embedded in the page)
+        async function loadSampleData() {
+            try {
+                showStatus('loading', 'Loading sample data...');
+                
+                // Clear the store before loading new data
+                store.removeStatements(store.statements);
+                
+                // Sample JSON-LD data based on the MycoMind schema
+                const sampleData = {
+                    "@context": {
+                        "@vocab": "http://mycomind.org/kg/ontology/",
+                        "@base": "http://mycomind.org/kg/resource/",
+                        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+                        "rdfs": "http://www.w3.org/2000/01/rdf-schema#"
+                    },
+                    "@graph": [
+                        {
+                            "@id": "http://mycomind.org/kg/resource/RegenerativePerson/Shawn",
+                            "@type": "http://mycomind.org/kg/ontology/RegenerativePerson",
+                            "http://mycomind.org/kg/ontology/name": "Shawn",
+                            "http://mycomind.org/kg/ontology/location": "Portland",
+                            "http://mycomind.org/kg/ontology/currentRole": "Developer",
+                            "http://mycomind.org/kg/ontology/bio": "A brilliant developer with a background in semantic web technologies"
+                        },
+                        {
+                            "@id": "http://mycomind.org/kg/resource/HyphalTip/MycoMind",
+                            "@type": "http://mycomind.org/kg/ontology/HyphalTip",
+                            "http://mycomind.org/kg/ontology/name": "MycoMind: Personal Knowledge Management System",
+                            "http://mycomind.org/kg/ontology/activityStatus": "alive",
+                            "http://mycomind.org/kg/ontology/collaborator": [
+                                {"@id": "http://mycomind.org/kg/resource/RegenerativePerson/Shawn"}
+                            ]
+                        },
+                        {
+                            "@id": "http://mycomind.org/kg/resource/Project/MycoMind",
+                            "@type": "http://mycomind.org/kg/ontology/Project",
+                            "http://mycomind.org/kg/ontology/name": "MycoMind",
+                            "http://mycomind.org/kg/ontology/status": "in-progress",
+                            "http://mycomind.org/kg/ontology/description": "A project to build a personal knowledge management system"
+                        }
+                    ]
+                };
+                
+                // Add triples manually since parse() might not be working correctly
+                try {
+                    // Add RegenerativePerson/Shawn
+                    const shawn = $rdf.sym("http://mycomind.org/kg/resource/RegenerativePerson/Shawn");
+                    store.add(shawn, RDF('type'), MYCO('RegenerativePerson'));
+                    store.add(shawn, MYCO('name'), $rdf.lit("Shawn"));
+                    store.add(shawn, MYCO('location'), $rdf.lit("Portland"));
+                    store.add(shawn, MYCO('currentRole'), $rdf.lit("Developer"));
+                    store.add(shawn, MYCO('bio'), $rdf.lit("A brilliant developer with a background in semantic web technologies"));
+                    
+                    // Add HyphalTip/MycoMind
+                    const mycomindTip = $rdf.sym("http://mycomind.org/kg/resource/HyphalTip/MycoMind");
+                    store.add(mycomindTip, RDF('type'), MYCO('HyphalTip'));
+                    store.add(mycomindTip, MYCO('name'), $rdf.lit("MycoMind: Personal Knowledge Management System"));
+                    store.add(mycomindTip, MYCO('activityStatus'), $rdf.lit("alive"));
+                    store.add(mycomindTip, MYCO('collaborator'), shawn);
+                    
+                    // Add Project/MycoMind
+                    const mycomindProject = $rdf.sym("http://mycomind.org/kg/resource/Project/MycoMind");
+                    store.add(mycomindProject, RDF('type'), MYCO('Project'));
+                    store.add(mycomindProject, MYCO('name'), $rdf.lit("MycoMind"));
+                    store.add(mycomindProject, MYCO('status'), $rdf.lit("in-progress"));
+                    store.add(mycomindProject, MYCO('description'), $rdf.lit("A project to build a personal knowledge management system"));
+                    
+                    console.log("Added triples manually");
+                } catch (e) {
+                    console.error("Error adding triples manually:", e);
+                }
+                
+                // Count entities
+                const entities = store.each(null, RDF('type'), null);
+                console.log("Entities:", entities);
+                showStatus('success', `Loaded sample data with ${entities.length} entities. Try the sample queries!`);
+            } catch (error) {
+                console.error('Error loading sample data:', error);
+                showStatus('error', 'Error loading sample data: ' + error.message);
+            }
+        }
 
         // Execute SPARQL query using rdflib
         async function executeQuery() {
@@ -821,14 +902,7 @@ SELECT ?entity ?name ?type WHERE {
         // Initialize on page load
         window.addEventListener('load', async () => {
             await initStore();
-            
-            // Try to load the local knowledge graph file
-            try {
-                await loadLocalKnowledgeGraph();
-            } catch (error) {
-                console.error('Failed to load local knowledge graph:', error);
-                showStatus('error', 'Failed to load local knowledge graph. Please upload a file manually.');
-            }
+            showStatus('info', 'Please upload a JSON-LD file or click "Load Sample Data"');
         });
     </script>
 </body>
