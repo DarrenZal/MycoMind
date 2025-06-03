@@ -46,9 +46,8 @@ debug_*.py
 *.swo
 *~
 
-# OS
+# Local environment
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
@@ -59,11 +58,4 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Neo4j
 neo4j/neo4j-community-5.15.0.tar.gz
-
-demo_vault/
-neo4j/
-fuseki/
-
-.gitignore
