@@ -34,9 +34,6 @@ async function loadLocalKnowledgeGraph() {
             const jsonldData = await response.json();
             console.log("Loaded JSON-LD data:", jsonldData);
             
-            // Clear the store before loading new data
-            store.removeStatements(store.statements);
-            
             // Process the JSON-LD data
             processJSONLD(jsonldData);
             
@@ -68,107 +65,66 @@ async function loadLocalKnowledgeGraph() {
 // Process JSON-LD data and add to the store
 function processJSONLD(jsonldData) {
     try {
-        // Try to parse the JSON-LD into the RDF store
-        $rdf.parse(JSON.stringify(jsonldData), store, "http://mycomind.org/kg/", "application/ld+json");
+        console.log("Processing JSON-LD data...");
         
-        // If parsing didn't work (no statements added), add triples manually
-        if (store.statements.length === 0 && jsonldData["@graph"]) {
-            console.log("Parsing didn't add any triples. Adding manually...");
-            
-            try {
-                // Process each entity in the @graph array
-                jsonldData["@graph"].forEach(entity => {
-                    const subject = $rdf.sym(entity["@id"]);
-                    
-                    // Add type
-                    if (entity["@type"]) {
-                        // Check if this triple already exists
-                        if (!store.holds(subject, RDF('type'), $rdf.sym(entity["@type"]))) {
-                            store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
-                        }
-                    }
-                    
-                    // Add all other properties
-                    Object.entries(entity).forEach(([key, value]) => {
-                        // Skip @id and @type as they're handled separately
-                        if (key === "@id" || key === "@type") return;
-                        
-                        // Handle array values
-                        if (Array.isArray(value)) {
-                            value.forEach(v => {
-                                if (typeof v === 'object' && v["@id"]) {
-                                    // Reference to another entity
-                                    const objNode = $rdf.sym(v["@id"]);
-                                    const predNode = $rdf.sym(key);
-                                    
-                                    // Check if this triple already exists
-                                    if (!store.holds(subject, predNode, objNode)) {
-                                        store.add(subject, predNode, objNode);
-                                    }
-                                } else {
-                                    // Literal value
-                                    const predNode = $rdf.sym(key);
-                                    const objNode = $rdf.lit(v);
-                                    
-                                    // Check for literal duplicates by looking for existing values
-                                    const existingValues = store.each(subject, predNode, null);
-                                    let isDuplicate = false;
-                                    
-                                    // Check if this value already exists
-                                    for (let i = 0; i < existingValues.length; i++) {
-                                        if (existingValues[i].value === objNode.value) {
-                                            isDuplicate = true;
-                                            break;
-                                        }
-                                    }
-                                    
-                                    // Only add if not a duplicate
-                                    if (!isDuplicate) {
-                                        store.add(subject, predNode, objNode);
-                                    }
-                                }
-                            });
-                        } 
-                        // Handle object values (references to other entities)
-                        else if (typeof value === 'object' && value["@id"]) {
-                            const objNode = $rdf.sym(value["@id"]);
-                            const predNode = $rdf.sym(key);
-                            
-                            // Check if this triple already exists
-                            if (!store.holds(subject, predNode, objNode)) {
-                                store.add(subject, predNode, objNode);
-                            }
-                        }
-                        // Handle literal values
-                        else {
-                            const predNode = $rdf.sym(key);
-                            const objNode = $rdf.lit(value);
-                            
-                            // Check for literal duplicates by looking for existing values
-                            const existingValues = store.each(subject, predNode, null);
-                            let isDuplicate = false;
-                            
-                            // Check if this value already exists
-                            for (let i = 0; i < existingValues.length; i++) {
-                                if (existingValues[i].value === objNode.value) {
-                                    isDuplicate = true;
-                                    break;
-                                }
-                            }
-                            
-                            // Only add if not a duplicate
-                            if (!isDuplicate) {
-                                store.add(subject, predNode, objNode);
-                            }
-                        }
-                    });
-                });
-                
-                console.log("Added sample data triples");
-            } catch (e) {
-                console.error("Error adding sample data triples:", e);
-            }
+        // Clear the store first to avoid duplicates
+        store.removeStatements(store.statements);
+        
+        // Try to parse the JSON-LD into the RDF store using rdflib
+        try {
+            $rdf.parse(JSON.stringify(jsonldData), store, "http://mycomind.org/kg/", "application/ld+json");
+            console.log("Successfully parsed JSON-LD using rdflib parser");
+        } catch (parseError) {
+            console.log("RDFLib parsing failed, processing manually:", parseError);
         }
+        
+        // If parsing didn't work or added no statements, add triples manually
+        if (store.statements.length === 0 && jsonldData["@graph"]) {
+            console.log("Adding triples manually from @graph...");
+            
+            // Process each entity in the @graph array
+            jsonldData["@graph"].forEach(entity => {
+                const subject = $rdf.sym(entity["@id"]);
+                
+                // Add type
+                if (entity["@type"]) {
+                    store.add(subject, RDF('type'), $rdf.sym(entity["@type"]));
+                }
+                
+                // Add all other properties
+                Object.entries(entity).forEach(([key, value]) => {
+                    // Skip @id and @type as they're handled separately
+                    if (key === "@id" || key === "@type") return;
+                    
+                    const predNode = $rdf.sym(key);
+                    
+                    // Handle array values
+                    if (Array.isArray(value)) {
+                        value.forEach(v => {
+                            if (typeof v === 'object' && v["@id"]) {
+                                // Reference to another entity
+                                store.add(subject, predNode, $rdf.sym(v["@id"]));
+                            } else {
+                                // Literal value
+                                store.add(subject, predNode, $rdf.lit(v));
+                            }
+                        });
+                    } 
+                    // Handle object values (references to other entities)
+                    else if (typeof value === 'object' && value["@id"]) {
+                        store.add(subject, predNode, $rdf.sym(value["@id"]));
+                    }
+                    // Handle literal values
+                    else {
+                        store.add(subject, predNode, $rdf.lit(value));
+                    }
+                });
+            });
+            
+            console.log("Added triples manually");
+        }
+        
+        console.log(`Total statements in store: ${store.statements.length}`);
     } catch (error) {
         console.error('Error processing JSON-LD:', error);
     }
@@ -178,9 +134,6 @@ function processJSONLD(jsonldData) {
 async function loadSampleData() {
     try {
         showStatus('loading', 'Loading sample data...');
-        
-        // Clear the store before loading new data
-        store.removeStatements(store.statements);
         
         // Sample data as a fallback if both local and GitHub fetches fail
         const sampleData = {
@@ -297,18 +250,45 @@ async function executeSPARQLQuery(sparqlQuery) {
             console.log("Executing query:", sparqlQuery);
             console.log("Store has statements:", store.statements.length);
             
+            // Debug: Print all statements in the store
+            console.log("All statements in store:");
+            store.statements.forEach((stmt, index) => {
+                console.log(`Statement ${index}:`, 
+                    stmt.subject.value, 
+                    stmt.predicate.value, 
+                    stmt.object.termType === 'Literal' ? stmt.object.value : stmt.object.value);
+            });
+            
             // Simple query execution for demo purposes
             // This avoids CORS issues with external fetching
-            const results = [];
+            let results = [];
             
             // Parse the query to determine what we're looking for
             if (sparqlQuery.includes('rdf:type myco:RegenerativePerson')) {
                 console.log("Looking for RegenerativePerson entities");
                 
-                // Find all RegenerativePerson entities
-                const persons = store.each(null, RDF('type'), MYCO('RegenerativePerson'));
-                console.log("Found persons:", persons);
+                // Find all RegenerativePerson entities - use Set to ensure uniqueness
+                const personURIs = new Set();
+                store.statements.forEach(stmt => {
+                    if (stmt.predicate.value === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' && 
+                        stmt.object.value === 'http://mycomind.org/kg/ontology/RegenerativePerson') {
+                        personURIs.add(stmt.subject.value);
+                    }
+                });
                 
+                const persons = Array.from(personURIs).map(uri => $rdf.sym(uri));
+                console.log("Found unique persons:", persons);
+                
+                // Debug: Print each person's properties
+                persons.forEach((person, idx) => {
+                    console.log(`Person ${idx}:`, person.value);
+                    const stmts = store.statementsMatching(person);
+                    stmts.forEach(s => {
+                        console.log(`  - ${s.predicate.value}: ${s.object.termType === 'Literal' ? s.object.value : s.object.value}`);
+                    });
+                });
+                
+                // Process each unique person
                 persons.forEach(person => {
                     const name = store.any(person, MYCO('name'), null);
                     const location = store.any(person, MYCO('location'), null);
@@ -322,6 +302,8 @@ async function executeSPARQLQuery(sparqlQuery) {
                         role: role ? role.value : ''
                     });
                 });
+                
+                console.log("Query results:", results);
             } 
             else if (sparqlQuery.includes('rdf:type myco:HyphalTip')) {
                 console.log("Looking for HyphalTip entities");
@@ -692,9 +674,6 @@ window.addEventListener('load', async () => {
                 showStatus('loading', 'Loading knowledge graph...');
                 const text = await file.text();
                 const jsonldData = JSON.parse(text);
-                
-                // Clear the store before loading new data
-                store.removeStatements(store.statements);
                 
                 // Process the JSON-LD data
                 processJSONLD(jsonldData);
