@@ -547,10 +547,8 @@ LIMIT 10
                                 const predNode = $rdf.sym(key);
                                 const objNode = $rdf.lit(value);
                                 
-                                // Check if this triple already exists
-                                if (!store.holdsQuad(subject, predNode, objNode)) {
-                                    store.add(subject, predNode, objNode);
-                                }
+                                        // Add the triple (no easy way to check for literal duplicates)
+                                        store.add(subject, predNode, objNode);
                             }
                         });
                     });
