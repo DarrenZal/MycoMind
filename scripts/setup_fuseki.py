@@ -17,10 +17,12 @@ import sys
 import subprocess
 import requests
 import zipfile
+import tarfile
 import argparse
 import logging
 import time
 import signal
+import traceback
 from pathlib import Path
 from typing import Optional
 
@@ -40,9 +42,10 @@ class FusekiSetup:
             install_dir: Directory to install Fuseki
         """
         self.install_dir = Path(install_dir).resolve()
-        self.fuseki_version = "4.10.0"  # Latest stable version
-        self.download_url = f"https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-{self.fuseki_version}.zip"
-        self.fuseki_jar = self.install_dir / f"apache-jena-fuseki-{self.fuseki_version}" / "fuseki-server.jar"
+        self.fuseki_version = "4.10.0"  # Latest stable version  
+        self.download_url = f"https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-{self.fuseki_version}.tar.gz"
+        self.fuseki_dir = self.install_dir / f"apache-jena-fuseki-{self.fuseki_version}"
+        self.fuseki_script = self.fuseki_dir / "fuseki"
         self.config_file = self.install_dir / "mycomind-config.ttl"
         self.pid_file = self.install_dir / "fuseki.pid"
         self.log_file = self.install_dir / "fuseki.log"
@@ -60,10 +63,10 @@ class FusekiSetup:
             # Create install directory
             self.install_dir.mkdir(parents=True, exist_ok=True)
             
-            zip_file = self.install_dir / f"apache-jena-fuseki-{self.fuseki_version}.zip"
+            tar_file = self.install_dir / f"apache-jena-fuseki-{self.fuseki_version}.tar.gz"
             
             # Download if not already present
-            if not zip_file.exists():
+            if not tar_file.exists():
                 logger.info(f"Downloading Fuseki {self.fuseki_version}...")
                 response = requests.get(self.download_url, stream=True)
                 response.raise_for_status()
@@ -71,7 +74,7 @@ class FusekiSetup:
                 total_size = int(response.headers.get('content-length', 0))
                 downloaded = 0
                 
-                with open(zip_file, 'wb') as f:
+                with open(tar_file, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
@@ -86,21 +89,24 @@ class FusekiSetup:
                 logger.info("Fuseki archive already exists")
             
             # Extract if not already extracted
-            fuseki_dir = self.install_dir / f"apache-jena-fuseki-{self.fuseki_version}"
-            if not fuseki_dir.exists():
+            if not self.fuseki_dir.exists():
                 logger.info("Extracting Fuseki...")
-                with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                    zip_ref.extractall(self.install_dir)
+                with tarfile.open(tar_file, 'r:gz') as tar_ref:
+                    tar_ref.extractall(self.install_dir)
                 logger.info("Extraction completed")
+                
+                # Make fuseki script executable
+                if self.fuseki_script.exists():
+                    os.chmod(self.fuseki_script, 0o755)
             else:
                 logger.info("Fuseki already extracted")
             
             # Verify installation
-            if self.fuseki_jar.exists():
+            if self.fuseki_script.exists():
                 logger.info("✓ Fuseki installation verified")
                 return True
             else:
-                logger.error("✗ Fuseki jar not found after extraction")
+                logger.error("✗ Fuseki script not found after extraction")
                 return False
                 
         except Exception as e:
@@ -168,7 +174,7 @@ class FusekiSetup:
         """
         try:
             # Check if already running
-            if self.is_running():
+            if self.is_running(port):
                 logger.info("Fuseki server is already running")
                 return True
             
@@ -187,23 +193,23 @@ class FusekiSetup:
             db_dir = self.install_dir / "databases"
             db_dir.mkdir(exist_ok=True)
             
-            # Build command
-            fuseki_home = str(self.install_dir / f"apache-jena-fuseki-{self.fuseki_version}")
+            # Build command using the fuseki shell script
             cmd = [
-                'java',
-                f'-Xmx{memory}',
-                '-jar', str(self.fuseki_jar),
+                str(self.fuseki_script),
+                'start',
                 '--config', str(self.config_file),
-                '--port', str(port)
+                '--port', str(port),
+                '--mem', memory
             ]
             
-            logger.info(f"Starting Fuseki server on port {port} with FUSEKI_HOME {fuseki_home}...")
+            logger.info(f"Starting Fuseki server on port {port}...")
             logger.info(f"Command: {' '.join(cmd)}")
             
             # Set environment variable
             env = os.environ.copy()
-            env["FUSEKI_HOME"] = fuseki_home
-            env["JAVA_HOME"] = "/Users/darrenzal/.sdkman/candidates/java/current"
+            env["FUSEKI_HOME"] = str(self.fuseki_dir)
+            if "JAVA_HOME" not in env:
+                env["JAVA_HOME"] = "/Users/darrenzal/.sdkman/candidates/java/current"
             
             # Log environment variables
             logger.debug(f"FUSEKI_HOME: {env.get('FUSEKI_HOME')}")
@@ -232,7 +238,7 @@ class FusekiSetup:
             # Wait a moment and check if it started
             time.sleep(3)
             
-            if self.is_running():
+            if self.is_running(port):
                 logger.info(f"✓ Fuseki server started successfully (PID: {process.pid})")
                 logger.info(f"  Web interface: http://localhost:{port}")
                 logger.info(f"  SPARQL endpoint: http://localhost:{port}/mycomind/sparql")
@@ -304,16 +310,19 @@ class FusekiSetup:
             logger.error(f"✗ Error stopping server: {e}")
             return False
     
-    def is_running(self) -> bool:
+    def is_running(self, port: int = 3030) -> bool:
         """
         Check if Fuseki server is running.
         
+        Args:
+            port: Port to check
+            
         Returns:
             True if running, False otherwise
         """
         try:
             # Check via HTTP ping
-            response = requests.get(f"http://localhost:3031/$/ping", timeout=2)
+            response = requests.get(f"http://localhost:{port}/$/ping", timeout=2)
             return response.status_code == 200
         except:
             return False
@@ -329,7 +338,7 @@ class FusekiSetup:
             'running': self.is_running(),
             'pid': None,
             'config_exists': self.config_file.exists(),
-            'jar_exists': self.fuseki_jar.exists(),
+            'script_exists': self.fuseki_script.exists(),
             'log_size': 0
         }
         
@@ -403,7 +412,7 @@ def main():
                 return 1
         
         elif args.start:
-            if not setup.fuseki_jar.exists():
+            if not setup.fuseki_script.exists():
                 logger.error("Fuseki not installed. Run with --download first.")
                 return 1
             
@@ -438,7 +447,7 @@ def main():
             print(f"  Running: {'✓' if status['running'] else '✗'}")
             print(f"  PID: {status['pid'] if status['pid'] else 'N/A'}")
             print(f"  Config exists: {'✓' if status['config_exists'] else '✗'}")
-            print(f"  Jar exists: {'✓' if status['jar_exists'] else '✗'}")
+            print(f"  Script exists: {'✓' if status['script_exists'] else '✗'}")
             print(f"  Log size: {status['log_size']} bytes")
             
             if status['running']:

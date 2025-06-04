@@ -92,6 +92,47 @@
           "type": "string", 
           "format": "date",
           "description": "The end date of the project"
+        },
+        "budget": {
+          "type": "number",
+          "description": "Project budget amount"
+        },
+        "fundingSource": {
+          "type": "string",
+          "description": "Source of project funding"
+        }
+      },
+      "relationships": {
+        "hasSubproject": {
+          "target": "Project",
+          "description": "Links to subprojects or sub-phases"
+        },
+        "partOfProject": {
+          "target": "Project",
+          "description": "Links to parent project this is a part of"
+        },
+        "projectLead": {
+          "target": "RegenerativePerson",
+          "description": "Person leading the project",
+          "inverse": "leadsProject"
+        },
+        "projectTeam": {
+          "target": "RegenerativePerson",
+          "description": "Team members working on the project",
+          "inverse": "memberOfProject"
+        },
+        "sponsoredBy": {
+          "target": "Organization",
+          "description": "Organization sponsoring or funding the project",
+          "inverse": "sponsors"
+        },
+        "deliverable": {
+          "target": "Note",
+          "description": "Project deliverables or outputs"
+        },
+        "milestone": {
+          "target": "ActionItem",
+          "description": "Key milestones or deliverables"
         }
       }
     },
@@ -196,6 +237,14 @@
         "founder": {
           "target": "Organization",
           "description": "Organizations founded by this person"
+        },
+        "leadsProject": {
+          "target": "Project",
+          "description": "Projects this person leads"
+        },
+        "memberOfProject": {
+          "target": "Project",
+          "description": "Projects this person is a team member of"
         }
       }
     },
@@ -243,6 +292,10 @@
         "collaboratesWith": {
           "target": "Organization",
           "description": "Other organizations they collaborate with"
+        },
+        "sponsors": {
+          "target": "Project",
+          "description": "Projects sponsored by this organization"
         }
       }
     },
@@ -268,6 +321,20 @@
           "type": "array",
           "items": "string",
           "description": "Tags associated with the note"
+        }
+      },
+      "relationships": {
+        "relatedToProject": {
+          "target": "Project",
+          "description": "Projects this note is related to"
+        },
+        "author": {
+          "target": "RegenerativePerson",
+          "description": "Person who authored this note"
+        },
+        "referencedInMeeting": {
+          "target": "Meeting",
+          "description": "Meetings where this note was referenced"
         }
       }
     },
@@ -303,6 +370,22 @@
         "attendee": {
           "target": "RegenerativePerson",
           "description": "People attending the meeting"
+        },
+        "relatedToProject": {
+          "target": "Project",
+          "description": "Projects discussed in this meeting"
+        },
+        "organizer": {
+          "target": "RegenerativePerson",
+          "description": "Person who organized the meeting"
+        },
+        "hostedBy": {
+          "target": "Organization",
+          "description": "Organization hosting the meeting"
+        },
+        "hasNotes": {
+          "target": "Note",
+          "description": "Notes taken during this meeting"
         }
       }
     },
@@ -338,7 +421,22 @@
       "relationships": {
         "assignedTo": {
           "target": "RegenerativePerson",
-          "description": "Person assigned to complete this action item"
+          "description": "Person assigned to complete this action item",
+          "inverse": "hasActionItem"
+        },
+        "relatedToProject": {
+          "target": "Project",
+          "description": "Project this action item belongs to",
+          "inverse": "milestone"
+        },
+        "derivedFromMeeting": {
+          "target": "Meeting",
+          "description": "Meeting where this action item was created"
+        },
+        "dependsOn": {
+          "target": "ActionItem",
+          "description": "Other action items this depends on",
+          "inverse": "blocks"
         }
       }
     }

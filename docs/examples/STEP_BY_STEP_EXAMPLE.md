@@ -25,7 +25,7 @@ cp examples/config_example.json config.json
 
 # Edit config.json and make these changes:
 # 1. Change "your_openai_api_key_here" to your actual OpenAI API key
-# 2. Update "vault_path": "/path/to/your/obsidian/vault" to your desired output path
+# 2. Update "vault_path": "./demo_vault" to your desired output path
 #    For this demo, you can use: "./demo_vault" (creates a demo_vault folder)
 #    Or use your existing Obsidian vault: "/Users/yourname/Documents/MyObsidianVault"
 ```
@@ -87,6 +87,20 @@ This will:
 ```bash
 # Load the Cypher statements into Neo4j
 scripts/neo4j/neo4j-community-5.15.0/bin/cypher-shell -u neo4j -p '' < mycomind_knowledge_graph.cypher
+```
+
+**If the above command completes but you don't see data loaded**, try importing just the entity creation statements:
+
+```bash
+# Alternative: Import only the CREATE statements for entities
+grep "^CREATE (" mycomind_knowledge_graph.cypher | scripts/neo4j/neo4j-community-5.15.0/bin/cypher-shell -u neo4j -p ''
+```
+
+**Verify data was loaded:**
+
+```bash
+# Check that entities were created
+echo "MATCH (n) RETURN labels(n) as entity_types, count(n) as count ORDER BY count DESC;" | scripts/neo4j/neo4j-community-5.15.0/bin/cypher-shell -u neo4j -p ''
 ```
 
 Alternatively, you can use the Neo4j Browser:
