@@ -38,13 +38,9 @@ For developers and power users:
 ## 📋 Examples and Samples
 
 - **[Complete Walkthrough](examples/complete-walkthrough.md)** - End-to-end tutorial with sample data
-- **[Sample Queries](examples/sample-queries/)** - Ready-to-use Neo4j and SPARQL queries
+- **[Sample Queries](examples/sample-queries/)** - Ready-to-use Neo4j Cypher queries
 - **[Sample Data](examples/sample_data/)** - Test documents for experimentation
 
-## 🌐 Web Interface
-
-- **[SPARQL Interface](web-interface/sparql-interface.md)** - Browser-based query interface
-- **[Web Interface](web-interface/index.html)** - Access the query interface
 
 ## 🗂️ Documentation Structure
 
@@ -73,9 +69,6 @@ docs/
 │   ├── complete-walkthrough.md
 │   ├── sample-queries/
 │   └── sample_data/
-└── web-interface/                     # Web-based tools
-    ├── sparql-interface.md
-    └── index.html
 ```
 
 ## 🎯 Common Workflows
