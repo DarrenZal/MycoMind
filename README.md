@@ -87,7 +87,7 @@ python scripts/graph_db_client.py --create-dataset --load knowledge_graph.jsonld
 
 ### 📚 **Full Tutorial**
 
-For a complete step-by-step guide with sample queries, see: [**docs/examples/STEP_BY_STEP_EXAMPLE.md**](docs/examples/STEP_BY_STEP_EXAMPLE.md)
+For a complete step-by-step guide with sample queries, see: [**docs/examples/complete-walkthrough.md**](docs/examples/complete-walkthrough.md)
 
 ## Sample Queries
 
@@ -148,7 +148,7 @@ WHERE NOT EXISTS((f)<-[:DESCRIBES]-(:DocSection))
 RETURN f.name as UndocumentedFunction, f.source_file as File;
 ```
 
-**Full query collections with 50+ examples in the [step-by-step guide](docs/examples/STEP_BY_STEP_EXAMPLE.md) and [project knowledge graph docs](docs/Querying_Project_KG.md)!**
+**Full query collections with 50+ examples in the [complete walkthrough](docs/examples/complete-walkthrough.md) and [project knowledge graph docs](docs/advanced/project-knowledge-graph.md)!**
 
 ## Core Technologies
 
@@ -184,14 +184,14 @@ RETURN f.name as UndocumentedFunction, f.source_file as File;
 
 | Topic | Description | Link |
 |-------|-------------|------|
-| **Getting Started** | Complete tutorial with sample data | [docs/examples/STEP_BY_STEP_EXAMPLE.md](docs/examples/STEP_BY_STEP_EXAMPLE.md) |
-| **🧠 Project Knowledge Graph** | **Query MycoMind's own codebase as a knowledge graph** | [docs/Querying_Project_KG.md](docs/Querying_Project_KG.md) |
-| **Architecture** | System design and components | [docs/Architecture.md](docs/Architecture.md) |
-| **Configuration** | Settings and environment setup | [docs/Configuration.md](docs/Configuration.md) |
-| **ETL Process** | Data extraction and transformation | [docs/ETL_Process.md](docs/ETL_Process.md) |
-| **Neo4j Setup** | Graph database installation and usage | [docs/Neo4j_Database_Setup.md](docs/Neo4j_Database_Setup.md) |
-| **Fuseki Setup** | SPARQL endpoint setup and querying | [docs/Graph_Database_Setup.md](docs/Graph_Database_Setup.md) |
-| **Schema Design** | Creating custom ontologies | [docs/Ontology_Design.md](docs/Ontology_Design.md) |
+| **📚 Documentation Hub** | Complete documentation overview | [docs/README.md](docs/README.md) |
+| **🚀 Quick Start** | Installation and first extraction | [docs/quick-start/installation.md](docs/quick-start/installation.md) |
+| **📖 Complete Tutorial** | End-to-end walkthrough with sample data | [docs/examples/complete-walkthrough.md](docs/examples/complete-walkthrough.md) |
+| **🗄️ Database Setup** | Neo4j and Fuseki installation guides | [docs/database-backends/](docs/database-backends/) |
+| **⚙️ Configuration** | Settings and environment setup | [docs/user-guides/configuration-reference.md](docs/user-guides/configuration-reference.md) |
+| **🔧 Advanced Topics** | Architecture, API reference, and development | [docs/advanced/](docs/advanced/) |
+| **🧠 Project Knowledge Graph** | **Query MycoMind's own codebase as a knowledge graph** | [docs/advanced/project-knowledge-graph.md](docs/advanced/project-knowledge-graph.md) |
+| **❓ Troubleshooting** | Common issues and solutions | [docs/user-guides/troubleshooting.md](docs/user-guides/troubleshooting.md) |
 
 ## Requirements
 
@@ -206,4 +206,4 @@ This project demonstrates modern AI + knowledge graph integration patterns. Cont
 
 ---
 
-**🚀 Ready to build your knowledge graph?** Start with the [**Step-by-Step Tutorial**](docs/examples/STEP_BY_STEP_EXAMPLE.md)!
+**🚀 Ready to build your knowledge graph?** Start with the [**Complete Walkthrough**](docs/examples/complete-walkthrough.md) or see the [**Documentation Hub**](docs/README.md)!

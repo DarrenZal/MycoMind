@@ -280,6 +280,70 @@ python scripts/setup_neo4j.py --install-dir scripts/neo4j --restart
 python scripts/setup_neo4j.py --install-dir scripts/neo4j --logs
 ```
 
+### 🗑️ **Completely Wipe Neo4j Database**
+
+If you need to completely reset your Neo4j database (useful when re-running the demo or fixing index conflicts):
+
+#### **Method 1: Database Reset via Cypher (Recommended)**
+
+```bash
+# Connect to Neo4j shell
+scripts/neo4j/neo4j-community-5.15.0/bin/cypher-shell -u neo4j -p ''
+
+# Then run these commands in order:
+# 1. Drop all indexes and constraints first
+DROP INDEX index_32dd8477 IF EXISTS;
+CALL db.indexes() YIELD name CALL db.index.drop(name);
+CALL db.constraints() YIELD name CALL db.constraint.drop(name);
+
+# 2. Delete all data
+MATCH (n) DETACH DELETE n;
+
+# 3. Verify everything is clean
+MATCH (n) RETURN count(n) as remaining_nodes;
+CALL db.indexes() YIELD name RETURN name;
+```
+
+#### **Method 2: Complete Database Directory Removal**
+
+```bash
+# Stop Neo4j first
+python scripts/setup_neo4j.py --install-dir scripts/neo4j --stop
+
+# Remove the entire data directory
+rm -rf scripts/neo4j/neo4j-community-5.15.0/data/
+
+# Restart Neo4j (this will recreate a fresh database)
+python scripts/setup_neo4j.py --install-dir scripts/neo4j --start
+```
+
+#### **Method 3: Command Line Reset (One-liner)**
+
+```bash
+# Stop, wipe, and restart in one command sequence
+python scripts/setup_neo4j.py --install-dir scripts/neo4j --stop && \
+rm -rf scripts/neo4j/neo4j-community-5.15.0/data/ && \
+python scripts/setup_neo4j.py --install-dir scripts/neo4j --start
+```
+
+#### **Verify Clean Database**
+
+After wiping, verify the database is clean before reloading:
+
+```bash
+# Should return 0 nodes
+echo "MATCH (n) RETURN count(n) as node_count;" | scripts/neo4j/neo4j-community-5.15.0/bin/cypher-shell -u neo4j -p ''
+
+# Should return no indexes
+echo "CALL db.indexes() YIELD name RETURN name;" | scripts/neo4j/neo4j-community-5.15.0/bin/cypher-shell -u neo4j -p ''
+```
+
+#### **Common Issues When Wiping**
+
+- **"An equivalent index already exists"** - This happens when you try to reload data without dropping indexes first. Use Method 1 above.
+- **"Could not stop Neo4j server"** - The restart command may fail to stop. Use `pkill java` or manually kill Neo4j processes, then start fresh.
+- **Database still shows old data** - Ensure you're connected to the correct database. Neo4j may have multiple databases.
+
 ### 📈 **Graph Analytics**
 
 ```cypher
